@@ -1,2 +1,2 @@
 # hm
-Python package for hydrological model development
+Classes and methods for hydrological model development in Python.
