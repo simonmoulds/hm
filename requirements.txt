@@ -1,0 +1,4 @@
+cftime==1.0.3.4
+-e git+https://github.com/simonmoulds/hm.git@9489c3cc40bd67437cd17125690eddd4a39a6f23#egg=hm
+netCDF4==1.5.1.2
+numpy==1.16.4
