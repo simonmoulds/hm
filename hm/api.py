@@ -18,7 +18,7 @@ from .utils import *
 def set_modeltime(starttime, endtime, timedelta):
     return ModelTime(starttime, endtime, timedelta)    
 
-def set_domain(filename_or_obj, modeltime, varname, is_1d, xy_dimname, **kwargs):
+def set_domain(filename_or_obj, modeltime, varname=None, is_1d=False, xy_dimname=None, **kwargs):
     """Open data array which defines the model domain.
     
     Parameters
@@ -82,7 +82,8 @@ def set_domain(filename_or_obj, modeltime, varname, is_1d, xy_dimname, **kwargs)
     except OSError:
         try:
             da = xr.open_rasterio(filename_or_obj, **kwargs)
-            return da
+            if 'band' in da.dims:
+                da = da.sel(band=1)
         except:
             raise OSError(
                 'File ' + filename_or_obj + ' cannot be opened'
@@ -96,8 +97,10 @@ def set_domain(filename_or_obj, modeltime, varname, is_1d, xy_dimname, **kwargs)
     coords.update({'time' : modeltime.times})
     dims.update({'time' : 'time'})
     ds = xr.merge([xr.Dataset(coords), mask])
-    # # TODO: grid cell area should be included in model domain        
-    return HmDomain(ds, is_1d=is_1d, xy_dimname=xy_dimname)
+    # # TODO: grid cell area should be included in model domain
+    # return HmDomain(ds, is_1d=is_1d, xy_dimname=xy_dimname)
+    return HmDomain(ds, is_1d=is_1d, xy_dimname='xy')
+    
 
 def get_files_covering_time_period(filename_or_obj, domain):
     # assume that no more than one file per day is used - is this reasonable?
@@ -154,8 +157,8 @@ def open_hmdataarray(
         filename_or_obj,
         variable,
         domain,
-        is_1d,
-        xy_dimname,
+        is_1d=False,
+        xy_dimname=None,
         use_xarray=True,
         **kwargs
 ):
@@ -222,13 +225,13 @@ def open_hmdataarray(
                     'one-dimensional.'
                 )
                         
-            domain_ext = get_extent(domain.coords)
-            data_ext = get_extent(da.coords)
+            domain_ext = get_spatial_extent(domain.coords)
+            data_ext = get_spatial_extent(coords)
             domain_in_data = \
-                (data_ext.xmin <= domain_ext.xmin) \
-                & (data_ext.xmax >= domain_ext.xmax) \
-                & (data_ext.ymin <= domain_ext.ymin) \
-                & (data_ext.ymax >= domain_ext.ymax)
+                (data_ext.left <= domain_ext.left) \
+                & (data_ext.right >= domain_ext.right) \
+                & (data_ext.bottom <= domain_ext.bottom) \
+                & (data_ext.top >= domain_ext.top)
             if not domain_in_data:
                 raise ValueError(
                     'DataArray does not entirely contain model domain: '
@@ -251,13 +254,13 @@ def open_hmdataarray(
     # rename dimensions to standard names
     rename_dict = {value:key for key,value in dims.items()}
     da = da.rename(rename_dict)
-    
+
     if temporal:
         if spatial:
-            hm = HmSpaceTimeDataArray(da, domain, is_1d, xy_dimname)
+            hm = HmSpaceTimeDataArray(da, domain, is_1d, 'xy')
         else:
-            hm = HmTimeDataArray(da, domain, is_1d, xy_dimname)
+            hm = HmTimeDataArray(da, domain)
     else:
-        hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname)
+        hm = HmSpaceDataArray(da, domain, is_1d, 'xy')
 
     return hm

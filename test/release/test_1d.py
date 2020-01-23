@@ -25,6 +25,7 @@ def test_set_domain():
     )
     
 def test_open_hmdataarray():
+    os.chdir('test/release')
     modeltime = hm.set_modeltime(
         datetime.datetime(2003,6,1),
         datetime.datetime(2003,6,30),

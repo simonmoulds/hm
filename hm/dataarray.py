@@ -17,22 +17,33 @@ from .utils import *
 
 # TODO:
 # https://gis.stackexchange.com/a/166900
-
 class HmBaseClass(object):
     def __init__(self, dataarray_or_dataset, is_1d=False, xy_dimname=None):
         self._data = dataarray_or_dataset
-        self._dims = get_dimension_names(dataarray_or_dataset, is_1d, xy_dimname)
-        self._coords = get_coordinates(dataarray_or_dataset, self._dims)
-        self._is_1d = is_1d & ('xy' in self.dims)
+        if is_1d & (xy_dimname not in self._data.dims):
+            raise ValueError(
+                'DataArray or Dataset does not contain the '
+                'dimension name: ' + xy_dimname
+            )
+        self._is_1d = is_1d
+        if self._is_1d:
+            self._data.rename({xy_dimname : 'xy'})            
+        self._update()        
+    def _update(self):
+        self._dims = get_dimension_names(self._data, self._is_1d, 'xy')
+        self._reorder_dims()
+        self._coords = get_coordinates(self._data, self._dims)
+        self._is_1d = ('xy' in self.dims)
         self._is_2d = (not self._is_1d) & all(dim in self.dims for dim in ('x','y'))
         self._is_spatial = self._is_1d | self._is_2d
-        self.spatial_extent()
-        
-    def spatial_extent(self):
+        self._spatial_extent()
+    def _reorder_dims(self):
+        pass
+    def _spatial_extent(self):
         if self.is_2d:
-            self._extent = spatial_extent(self._coords)
+            self._extent = get_spatial_extent(self._coords)
         else:
-            self._extent = None
+            self._extent = None            
     @property
     def extent(self):
         return self._extent
@@ -83,19 +94,35 @@ class HmDomain(HmDataset):
     
 class HmSpaceDataArray(HmDataArray):
     def __init__(self, dataarray, domain, is_1d=False, xy_dimname=None):
-        super().__init__(dataarray, is_1d, xy_dimname)
         self._domain = domain
-        self.subset()
-        
+        super().__init__(
+            dataarray,
+            is_1d,
+            xy_dimname
+        )        
+        self.subset()        
+    def _reorder_dims(self):
+        """Reorder dimensions to match model domain."""
+        neworder = [dim for dim in self._domain.dims if dim in self.dims]
+        self._data = self._data.transpose(*neworder)        
     def subset(self):
-        self.get_index()
-        self._data = self._data.sel(self.index)
+        """Subset data with model domain."""
+        self._get_index()
+        # TODO: think about how we can adjust the method arg to sel should vary?
+        # TODO: subset in stages; first subset dims with coordinates (so that
+        #       a 'method' argument can be supplied, then subset dims which do
+        #       not have coordinates.
+        if all([dim in self._data.coords for dim in self.index]):
+            self._data = self._data.sel(self.index, method='nearest')
+        else:
+            self._data = self._data.sel(self.index)            
+        self._update()
         
-    def get_index(self):
+    def _get_index(self):
         index_dict = {}
         for dim in self.dims:
             index_dict[dim] = self._domain.coords[dim]        
-        self.index = index_dict
+        self.index = index_dict        
     def select(self):
         pass    
     def load(self):
@@ -106,9 +133,14 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         super().get_index()
         time_slc = slice(self._domain.starttime, self._domain.endtime)
         self.index['time'] = time_slc        
-    def select(self, time):
-        # 'time' may be a slice, as in slice(starttime, endtime)
-        return self._data.sel({self._dims['time'] : time})
+    def select(self, time, **kwargs):
+        """Select a temporal subset of the data.
+
+        Parameters
+        ----------
+        time : slice, ...            
+        """
+        return self._data.sel({self._dims['time'] : time}, **kwargs)
     @property
     def starttime(self):
         return pd.Timestamp(self._data['time'].values[0])
