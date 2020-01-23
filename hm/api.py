@@ -239,6 +239,8 @@ def open_hmdataarray(
                     'Data extent is ' + str(tuple(data_ext.values())) + '(left, right, top, bottom)'
                 )
     if temporal:
+        # use the ghost dataset for indexing & subsetting
+        ghost_ds = xr.Dataset(coords)
         data_starttime = pd.Timestamp(da.coords[dims.time].values[0])
         data_endtime = pd.Timestamp(da.coords[dims.time].values[-1])
         time_domain_in_data = \
@@ -251,16 +253,15 @@ def open_hmdataarray(
                 'Data temporal extent is: ' + str(data_starttime) + ' -> ' + str(data_endtime)
             )
 
-    # rename dimensions to standard names
-    rename_dict = {value:key for key,value in dims.items()}
-    da = da.rename(rename_dict)
-
+    # # rename dimensions to standard names
+    # rename_dict = {value:key for key,value in dims.items()}
+    # da = da.rename(rename_dict)
     if temporal:
         if spatial:
-            hm = HmSpaceTimeDataArray(da, domain, is_1d, 'xy')
+            hm = HmSpaceTimeDataArray(ghost_ds, filename_or_obj, domain, is_1d, xy_dimname)
         else:
-            hm = HmTimeDataArray(da, domain)
+            hm = HmTimeDataArray(ghost_ds, filename_or_obj, domain)
     else:
-        hm = HmSpaceDataArray(da, domain, is_1d, 'xy')
+        hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname)
 
     return hm

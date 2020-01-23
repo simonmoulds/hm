@@ -2,8 +2,9 @@ import datetime
 import hm.api as hm
 import xarray
 import pytest
+import pandas as pd
 
-# os.chdir("test/release")
+os.chdir("test/release")
 
 def test_set_domain():
     modeltime = hm.set_modeltime(
@@ -31,19 +32,50 @@ def test_open_hmdataarray():
         'tavg',
         domain
     )
-    da.load()
+    da.load()    
+    # mask = da._domain.mask
+    # da = da._data.transpose()
+    # da = da.sel(time=pd.Timestamp(2003,6,1), method='nearest')
     
-    mask = da._domain.mask
-    da = da._data.transpose()
-    da = da.sel(time=pd.Timestamp(2003,6,1), method='nearest')
-    
-import xarray as xr
-mask = xr.open_rasterio('test_data/ghana_landmask_0pt25degree.tif')
-mask = mask.sel(band=1)
-da = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')['tavg']
-# da2 = da.transpose('latitude','longitude','time')
-da = xr.load_dataset('/data/WFDEI/PSurf_daily_WFDEI/PSurf_daily_WFDEI_200001.nc', decode_times=False)
+# import xarray as xr
+# mask = xr.open_rasterio('test_data/ghana_landmask_0pt25degree.tif')
+# mask = mask.sel(band=1)
+# da = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')['tavg']
+# # da2 = da.transpose('latitude','longitude','time')
+# da = xr.load_dataset('/data/WFDEI/PSurf_daily_WFDEI/PSurf_daily_WFDEI_200001.nc', decode_times=False)
 
 
 import netCDF4 as nc
-x = nc.Dataset('test_data/AgMERRA_2003_tavg.nc4')
+import xarray as xr
+x = nc.Dataset('test_data/AgMERRA_2003_tavg.nc4', mode='r')
+y = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')
+
+coords = {}
+with xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4') as ds:
+    for dim in x.dimensions:
+        coords[dim] = ds[dim].values
+
+
+a = np.array([1,2,3,4,5,6,7,8,9,10])
+b = np.array([1,5,1,10,10,6,4,4])
+ab,a_ind,b_ind = np.intersect1d(a,b,return_indices=True)
+
+# a = np.random.randint(0,100000,(100000,))
+# b = np.random.randint(0,100000,(100000,))
+# ab,a_ind,b_ind = np.intersect1d(b,a,return_indices=True)
+# check this also works with datetime
+
+# x = np.array([3,5,7,1,9,8,6,6])
+# y = np.array([2,1,5,10,100,6])
+
+# index = np.argsort(x)
+# sorted_x = x[index]
+# sorted_index = np.searchsorted(sorted_x, y)
+
+# yindex = np.take(index, sorted_index, mode="clip")
+# mask = x[yindex] != y
+# print result
+
+asorted = np.argsort(a)
+bpos = np.searchsorted(a[asorted], b)
+indices = asorted[bpos]
