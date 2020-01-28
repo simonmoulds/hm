@@ -5,6 +5,7 @@ import os
 import math
 import string
 import datetime
+import netCDF4 as nc
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ import pandas as pd
 # https://github.com/cdgriffith/Box/
 from box import Box
 from collections import namedtuple, OrderedDict
+
 from .constants import *
 from .utils import *
 
@@ -26,19 +28,23 @@ class HmBaseClass(object):
                 'dimension name: ' + xy_dimname
             )
         self._is_1d = is_1d
-        self._xy_dimname = xy_dimname        
+        self._xy_dimname = xy_dimname
+        self._in_memory = False
         # if self._is_1d:
         #     self._data.rename({xy_dimname : 'xy'})            
-        self._update()        
+        self._update()
+        
     def _update(self):
-        self._dims = get_dimension_names(self._data, self._is_1d, self._xy_dimname)
+        self._dims = get_xr_dimension_names(self._data, self._is_1d, self._xy_dimname)
         # self._reorder_dims()
-        self._coords = get_coordinates(self._data, self._dims)
+        self._axes = get_xr_dimension_axes(self._data, self._dims)
+        self._coords = get_xr_coordinates(self._data, self._dims)
         self._is_1d = ('xy' in self.dims)
         self._is_2d = (not self._is_1d) & all(dim in self.dims for dim in (self._dims['x'], self._dims['y']))
         # self._is_2d = (not self._is_1d) & all(dim in self.dims for dim in ('x','y'))
         self._is_spatial = self._is_1d | self._is_2d
         self._spatial_extent()
+        
     # def _reorder_dims(self):
     #     pass
     def _spatial_extent(self):
@@ -67,6 +73,9 @@ class HmBaseClass(object):
     @property
     def is_temporal(self):
         return 'time' in self.dims
+    @property
+    def in_memory(self):
+        return self._in_memory
     
 class HmDataArray(HmBaseClass):
     pass
@@ -103,13 +112,13 @@ class HmSpaceDataArray(HmDataArray):
             xy_dimname
         )        
         self.subset()        
-    def _reorder_dims(self):
-        """Reorder dimensions to match model domain."""
-        neworder = [dim for dim in self._domain.dims if dim in self.dims]
-        self._data = self._data.transpose(*neworder)        
+    # def _reorder_dims(self):
+    #     """Reorder dimensions to match model domain."""
+    #     neworder = [dim for dim in self._domain.dims if dim in self.dims]
+    #     self._data = self._data.transpose(*neworder)        
     def subset(self):
         """Subset data with model domain."""
-        self.index = self._get_index()
+        self._get_index()
         # TODO: think about how we can adjust the method arg to sel should vary?
         # TODO: subset in stages; first subset dims with coordinates (so that
         #       a 'method' argument can be supplied, then subset dims which do
@@ -122,41 +131,43 @@ class HmSpaceDataArray(HmDataArray):
         
     def _get_index(self):
         index_dict = {}
-        for dim in self.dims:
-            index_dict[dim] = self._domain.coords[dim]        
-        self.index = index_dict
-        # return index_dict
-    
-    def select(self):
-        pass    
-    def load(self):
-        self._data.load()
-
-import netCDF4 as nc
-class HmSpaceTimeDataArray(HmSpaceDataArray):
-    def __init__(self, ds, filename_or_obj, domain, is_1d, xy_dimname):
-        super().__init__(ds, is_1d, xy_dimname)
-        self._ncdata = nc.Dataset(filename_or_obj, 'r')
-        self._get_nc_index()
-
-    def _get_nc_index(self):
-        nc_index_dict = {}
-        for dim, dimname in self.dims.items():
-            nc_dim = self._ncdata.variables[dimname]
-            xr_dim = self.index[dim]
-            # https://stackoverflow.com/a/8251668
-            # this should work with times as well (and is hence preferable to writing a Fortran routine)
-            nc_sorted = np.argsort(nc_dim)
-            xr_pos = np.searchsorted(nc_dim[nc_sorted], xr_dim)
-            nc_index_dict[dimname] = nc_sorted[xr_pos]
-            # -> now find matching            
+        for dim, dimname in self._dims.items():
             index_dict[dimname] = self._domain.coords[dim]
         self.index = index_dict
         
-    def _get_index(self):
-        super().get_index()
-        time_slc = slice(self._domain.starttime, self._domain.endtime)        
-        self.index['time'] = time_slc
+    def select(self):
+        pass
+    
+    def load(self):
+        self._data.load()
+        self._in_memory = True
+
+def match(x, table):
+    table_sorted = np.argsort(table)
+    x_pos = np.searchsorted(table[table_sorted], x)
+    return table_sorted[x_pos]
+
+class HmSpaceTimeDataArray(HmSpaceDataArray):
+    def __init__(self, dataarray, filename_or_obj, variable, domain, is_1d, xy_dimname):
+        super().__init__(dataarray, domain, is_1d, xy_dimname)
+        self._varname = variable
+        self._nc_data = nc.Dataset(filename_or_obj, 'r')
+        self._nc_coords = get_nc_coordinates(self._nc_data, self._dims)
+        self._get_nc_index()
+        self._nc_time = self._nc_coords[self._dims['time']]
+        
+    def _get_nc_index(self):
+        """Map xarray to underlying netCDF4 dataset.
+        
+        This is necessary because xarray is rather slow at 
+        retrieving data from file.
+        """
+        nc_slice = [slice(None)] * len(self._dims)
+        for i, (dim, dimname) in enumerate(self._dims.items()):
+            nc_dim = self._nc_coords[dim]
+            xr_dim = self.index[dimname]
+            nc_slice[i] = match(xr_dim, nc_dim)
+        self._nc_index = nc_slice
         
     def select(self, time, **kwargs):
         """Select a temporal subset of the data.
@@ -165,10 +176,14 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         ----------
         time : slice, ...            
         """
-        xr_data = self._data.sel({self._dims['time'] : time} ** kwargs)
-        xr_times = xr_data[self._dims['time']].values
-        # ...
-        return self._data.sel({self._dims['time'] : time}, **kwargs)
+        # select time using xarray selection
+        xr_data = self._data.sel({self._dims['time'] : time}, **kwargs)
+        xr_time = xr_data[self._dims['time']].values
+        slc = self._nc_index
+        # match xarray times with those in netCDF4 file (there should always be a match)
+        slc[self._axes['time']] = match(xr_time, self._nc_time)
+        return self._nc_data.variables[self._varname][slc]
+
     @property
     def starttime(self):
         return pd.Timestamp(self._data['time'].values[0])

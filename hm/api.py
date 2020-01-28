@@ -90,8 +90,8 @@ def set_domain(filename_or_obj, modeltime, varname=None, is_1d=False, xy_dimname
             )
 
     # construct an xarray.Dataset
-    dims = get_dimension_names(da, is_1d, xy_dimname)
-    coords = get_coordinates(da, dims)
+    dims = get_xr_dimension_names(da, is_1d, xy_dimname)
+    coords = get_xr_coordinates(da, dims)
     rename_dict = {value:key for key,value in dims.items()}
     mask = da.astype(bool).rename(rename_dict).rename('mask')
     coords.update({'time' : modeltime.times})
@@ -180,11 +180,10 @@ def open_hmdataarray(
     --------
     TODO
     """
-    ds = open_xarray_dataset(filename_or_obj, domain, **kwargs)
-    
+    ds = open_xarray_dataset(filename_or_obj, domain, **kwargs)    
     da = ds[variable]
-    dims = get_dimension_names(da, is_1d, xy_dimname)
-    coords = get_coordinates(da, dims)
+    dims = get_xr_dimension_names(da, is_1d, xy_dimname)
+    coords = get_xr_coordinates(da, dims)
     if is_1d & (xy_dimname not in da.dims):
         raise ValueError(
             'DataArray object is specified as one-dimensional but does '
@@ -240,7 +239,7 @@ def open_hmdataarray(
                 )
     if temporal:
         # use the ghost dataset for indexing & subsetting
-        ghost_ds = xr.Dataset(coords)
+        # ghost_ds = xr.Dataset(coords).rename(dims)
         data_starttime = pd.Timestamp(da.coords[dims.time].values[0])
         data_endtime = pd.Timestamp(da.coords[dims.time].values[-1])
         time_domain_in_data = \
@@ -258,9 +257,11 @@ def open_hmdataarray(
     # da = da.rename(rename_dict)
     if temporal:
         if spatial:
-            hm = HmSpaceTimeDataArray(ghost_ds, filename_or_obj, domain, is_1d, xy_dimname)
+            # hm = HmSpaceTimeDataArray(ghost_ds, filename_or_obj, variable, domain, is_1d, xy_dimname)
+            hm = HmSpaceTimeDataArray(da, filename_or_obj, variable, domain, is_1d, xy_dimname)
         else:
-            hm = HmTimeDataArray(ghost_ds, filename_or_obj, domain)
+            # hm = HmTimeDataArray(ghost_ds, filename_or_obj, domain)
+            hm = HmTimeDataArray(da, filename_or_obj, domain)
     else:
         hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname)
 

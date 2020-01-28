@@ -4,7 +4,27 @@ import xarray
 import pytest
 import pandas as pd
 
-os.chdir("test/release")
+# os.chdir("test/release")
+# modeltime = hm.set_modeltime(
+#     datetime.datetime(2003,6,1,0,0),
+#     datetime.datetime(2003,6,10,0,0),
+#     datetime.timedelta(days=1)
+# )
+# domain = hm.set_domain(
+#     'test_data/ghana_landmask_0pt25degree.tif',
+#     modeltime
+# )
+# da = hm.open_hmdataarray(
+#     'test_data/AgMERRA_2003_tavg.nc4',
+#     'tavg',
+#     domain
+# )
+# x = da.select(time=pd.Timestamp(2003,6,4), method='nearest')
+
+def match(x, table):
+    table_sorted = np.argsort(table)
+    x_pos = np.searchsorted(table[table_sorted], x)
+    return table_sorted[x_pos]
 
 def test_set_domain():
     modeltime = hm.set_modeltime(
@@ -32,7 +52,8 @@ def test_open_hmdataarray():
         'tavg',
         domain
     )
-    da.load()    
+    da.select(time=pd.Timestamp(2003,6,1), method='nearest')
+    # da.load()    
     # mask = da._domain.mask
     # da = da._data.transpose()
     # da = da.sel(time=pd.Timestamp(2003,6,1), method='nearest')
@@ -45,20 +66,20 @@ def test_open_hmdataarray():
 # da = xr.load_dataset('/data/WFDEI/PSurf_daily_WFDEI/PSurf_daily_WFDEI_200001.nc', decode_times=False)
 
 
-import netCDF4 as nc
-import xarray as xr
-x = nc.Dataset('test_data/AgMERRA_2003_tavg.nc4', mode='r')
-y = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')
+# import netCDF4 as nc
+# import xarray as xr
+# x = nc.Dataset('test_data/AgMERRA_2003_tavg.nc4', mode='r')
+# y = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')
 
-coords = {}
-with xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4') as ds:
-    for dim in x.dimensions:
-        coords[dim] = ds[dim].values
+# coords = {}
+# with xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4') as ds:
+#     for dim in x.dimensions:
+#         coords[dim] = ds[dim].values
 
 
-a = np.array([1,2,3,4,5,6,7,8,9,10])
-b = np.array([1,5,1,10,10,6,4,4])
-ab,a_ind,b_ind = np.intersect1d(a,b,return_indices=True)
+# a = np.array([1,2,3,4,5,6,7,8,9,10])
+# b = np.array([1,5,1,10,10,6,4,4])
+# ab,a_ind,b_ind = np.intersect1d(a,b,return_indices=True)
 
 # a = np.random.randint(0,100000,(100000,))
 # b = np.random.randint(0,100000,(100000,))
@@ -76,6 +97,6 @@ ab,a_ind,b_ind = np.intersect1d(a,b,return_indices=True)
 # mask = x[yindex] != y
 # print result
 
-asorted = np.argsort(a)
-bpos = np.searchsorted(a[asorted], b)
-indices = asorted[bpos]
+# asorted = np.argsort(a)
+# bpos = np.searchsorted(a[asorted], b)
+# indices = asorted[bpos]

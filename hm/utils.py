@@ -32,9 +32,34 @@ def get_spatial_extent(coords):
     ymax = np.max(coords.y) + (yres / 2.)
     return Box(left=xmin, right=xmax, top=ymax, bottom=ymin, frozen_box=True)
 
-def get_dimension_names(dataarray, is_1d=False, xy_dimname=None):
+# def get_dimension_names(dims, is_1d, xy_dimname):
+#     dimnames = OrderedDict()
+#     for dim in dims:
+#         if is_1d & (dim == xy_dimname):
+#             dimnames['xy'] = dim 
+#         elif dim in allowed_x_dim_names:
+#             dimnames['x'] = dim
+#         elif dim in allowed_y_dim_names:
+#             dimnames['y'] = dim
+#         elif dim in allowed_z_dim_names:
+#             dimnames['z'] = dim
+#         elif dim in allowed_t_dim_names:
+#             dimnames['time'] = dim
+#         else:
+#             dimnames[dim] = dim
+#     return Box(dimnames, frozen_box=True)
+    
+# def get_nc_dimension_names(dataset, is_1d=False, xy_dimname=None):
+#     dims = dataset.dimensions
+#     return get_dimension_names(dims, is_1d, xy_dimname)
+
+# def get_xr_dimension_names(dataset_or_dataarray, is_1d=False, xy_dimname=None):
+#     dims = dataset_or_dataarray.dims
+#     return get_dimension_names(dims, is_1d, xy_dimname)
+    
+def get_xr_dimension_names(dataset_or_dataarray, is_1d=False, xy_dimname=None):
     dimnames = OrderedDict()
-    for dim in dataarray.dims:
+    for dim in dataset_or_dataarray.dims:
         if is_1d & (dim == xy_dimname):
             dimnames['xy'] = dim 
         elif dim in allowed_x_dim_names:
@@ -49,20 +74,39 @@ def get_dimension_names(dataarray, is_1d=False, xy_dimname=None):
             dimnames[dim] = dim
     return Box(dimnames, frozen_box=True)
 
-# def get_dimension_axes(dataarray, dimnames):
-#     axes = OrderedDict()
-#     for dim, dimname in dimnames.items():
-#         if dimname is not None:
-#             axes[dim] = [position for position,value in enumerate(dataarray.dims) if value == dimname][0]
-#     return Box(axes, frozen_box=True)
+def get_xr_dimension_axes(dataset_or_dataarray, dimnames):
+    axes = OrderedDict()
+    for dim, dimname in dimnames.items():
+        if dimname is not None:
+            axes[dim] = [position for position,value in enumerate(dataset_or_dataarray.dims) if value == dimname][0]
+    return Box(axes, frozen_box=True)
 
-def get_coordinates(dataarray, dimnames):
+def get_xr_coordinates(dataset_or_dataarray, dimnames):
     coords = OrderedDict()
     for dim, dimname in dimnames.items():
         if dimname is not None:
-            coords[dim] = dataarray[dimname].values
+            coords[dim] = dataset_or_dataarray[dimname].values
     return Box(coords, frozen_box=True)
-    
+
+def decode_nc_times(timevar):
+    try:
+        calendar = timevar.calendar
+    except AttributeError:
+        calendar = 'standard'            
+    times = nc.num2date(timevar[:], timevar.units, calendar)
+    return np.array(times, dtype='datetime64')
+
+def get_nc_coordinates(dataset, dimnames):
+    coords = OrderedDict()
+    for dim, dimname in dimnames.items():
+        if dimname is not None:
+            if dim is 'time':
+                coords[dim] = decode_nc_times(dataset.variables[dimname])
+            else:
+                coords[dim] = dataset.variables[dimname][:].data
+                
+    return Box(coords, frozen_box=True)
+
 # NOT USED:
 # =========
 
