@@ -15,6 +15,118 @@ from box import Box
 from collections import namedtuple, OrderedDict
 from .constants import *
 
+# file cache for reading netCDF files (this prevents files
+# from being reopened at every timestep)
+file_cache = dict()
+
+def clear_cache():
+    """Function to clear file cache."""
+    for item in list(file_cache.keys()):
+        file_cache[item].close()
+        file_cache.pop(item)
+
+def open_netcdf(filename, **kwargs):
+    if filename in list(file_cache.keys()):
+        f = file_cache[filename]
+    else:
+        f = nc.Dataset(filename, **kwargs)
+        # f.set_auto_mask(False)
+        file_cache[filename] = f
+    return f
+        
+# def add_time_dimension(netcdf, dimname, dimvar, **kwargs):
+#     """Add time dimension to a netCDF file.
+
+#     Parameters
+#     ----------
+#     netcdf : netCDF4.Dataset
+#     dimname : str    
+#     """
+#     shortname = variable_list.netcdf_short_name[dimname]
+#     try:
+#         datatype = variable_list.netcdf_datatype[dimname]
+#     except:
+#         datatype = 'f4'
+#     dimensions = variable_list.netcdf_dimensions[dimname]
+#     netcdf.createDimension(shortname, None)
+#     var = netcdf.createVariable(
+#         shortname,
+#         datatype,
+#         dimensions,
+#         **kwargs
+#     )
+#     var.standard_name = variable_list.netcdf_standard_name[dimname]
+#     var.long_name = variable_list.netcdf_long_name[dimname]
+#     var.units = variable_list.netcdf_unit[dimname]
+#     var.calendar = variable_list.netcdf_calendar[dimname]
+
+# def add_nontime_dimension(netcdf, dimname, dimvar, **kwargs):
+#     """Add a space or pseudo dimension to a netCDF file.
+
+#     Parameters
+#     ----------
+#     netcdf : netCDF4.Dataset
+#     dimname : str 
+#     dimvar : numpy.array 
+#     """
+#     ndim = len(dimvar)
+#     shortname = variable_list.netcdf_short_name[dimname]
+#     try:
+#         datatype = variable_list.netcdf_datatype[dimname]
+#     except:
+#         datatype = 'f4'
+#     dimensions = variable_list.netcdf_dimensions[dimname]
+#     standard_name = variable_list.netcdf_standard_name[dimname]
+#     # ensure appropriate number of decimal places
+#     # are used for latitude/longitude dimensions
+#     if standard_name in ['latitude','longitude']:
+#         kwargs['zlib'] = True
+#         kwargs['least_significant_digit'] = 16
+
+#     # create the dimension
+#     netcdf.createDimension(shortname, ndim)
+#     var = netcdf.createVariable(
+#         shortname,
+#         datatype,
+#         dimensions,
+#         **kwargs)
+#     var.standard_name = variable_list.netcdf_standard_name[dimname]
+#     var.long_name = variable_list.netcdf_long_name[dimname]
+#     var.units = variable_list.netcdf_unit[dimname]
+#     var[:] = np.array(dimvar)
+    
+def get_variable_dimensions(varname):
+    """Get the dimensions of a variable."""
+    if isinstance(varname, str):
+        var_dims = self.variable_list.netcdf_dimensions[varname]
+    elif isinstance(varname, list):
+        var_dims = []
+        for item in varname:
+            var_dims += list(self.variable_list.netcdf_dimensions[item])
+        var_dims = tuple(set(var_dims))            
+    return var_dims
+
+def reshape_array(arr, mask):
+    """Reshape a one-dimensional array.
+
+    This function allocates the values of an array with one 
+    space dimension to the corresponding grid cells of a 
+    one- or two-dimensional mask.
+
+    Parameters
+    ----------
+    arr : numpy.array 
+    mask : numpy.array, boolean
+    """
+    arr1 = np.zeros(arr.shape[:-1] + (mask.shape))
+    arr1[..., mask] = arr
+    return np.ma.array(arr, mask=np.broadcast_to(mask, arr.shape))
+
+def match(x, table):
+    table_sorted = np.argsort(table)
+    x_pos = np.searchsorted(table[table_sorted], x)
+    return table_sorted[x_pos]
+
 def is_temporal(dataarray):
     return np.any([dim in allowed_t_dim_names for dim in dataarray.dims])
 

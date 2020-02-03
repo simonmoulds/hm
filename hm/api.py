@@ -256,12 +256,13 @@ def open_hmdataarray(
     # rename_dict = {value:key for key,value in dims.items()}
     # da = da.rename(rename_dict)
     if temporal:
+        nc_dataset = nc.Dataset(filename_or_obj, 'r')
         if spatial:
             # hm = HmSpaceTimeDataArray(ghost_ds, filename_or_obj, variable, domain, is_1d, xy_dimname)
-            hm = HmSpaceTimeDataArray(da, filename_or_obj, variable, domain, is_1d, xy_dimname)
+            hm = HmSpaceTimeDataArray(da, nc_dataset, variable, domain, is_1d, xy_dimname)
         else:
             # hm = HmTimeDataArray(ghost_ds, filename_or_obj, domain)
-            hm = HmTimeDataArray(da, filename_or_obj, domain)
+            hm = HmTimeDataArray(da, nc_dataset, domain)
     else:
         hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname)
 

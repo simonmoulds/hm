@@ -10,9 +10,25 @@ logger = logging.getLogger(__name__)
 
 class ModelTime(object):
 
-    def __init__(self, starttime, endtime, timedelta):
-        self._starttime = starttime
-        self._endtime = endtime
+    def __init__(
+            self,
+            starttime,
+            endtime,
+            timedelta
+    ):
+        """To create... 
+
+        Parameters
+        ----------
+        starttime : pandas.Timestamp
+            The start time of the model simulation
+        endtime : pandas.Timestamp
+            The end time of the simulation
+        timedelta : pandas.Timedelta
+            The model time step
+        """
+        self._starttime = pd.Timestamp(starttime)
+        self._endtime = pd.Timestamp(endtime)
         self._dt = timedelta
         if (endtime - starttime) % timedelta == datetime.timedelta(0):
             self._n_timesteps = (endtime - starttime) / timedelta

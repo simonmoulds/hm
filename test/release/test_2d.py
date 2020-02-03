@@ -20,11 +20,12 @@ import pandas as pd
 #     domain
 # )
 # x = da.select(time=pd.Timestamp(2003,6,4), method='nearest')
+# x = da.select(time=slice(pd.Timestamp(2003,6,4), pd.Timestamp(2003,6,6)))
 
-def match(x, table):
-    table_sorted = np.argsort(table)
-    x_pos = np.searchsorted(table[table_sorted], x)
-    return table_sorted[x_pos]
+# def match(x, table):
+#     table_sorted = np.argsort(table)
+#     x_pos = np.searchsorted(table[table_sorted], x)
+#     return table_sorted[x_pos]
 
 def test_set_domain():
     modeltime = hm.set_modeltime(
@@ -69,7 +70,26 @@ def test_open_hmdataarray():
 # import netCDF4 as nc
 # import xarray as xr
 # x = nc.Dataset('test_data/AgMERRA_2003_tavg.nc4', mode='r')
-# y = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')
+# ds = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')
+# temp = ds.variables['tavg'].values
+# x = ds.variables['longitude'].values
+# y = ds.variables['latitude'].values
+# tm = ds.variables['time'].values
+# # dsn = xr.Dataset({'tavg' : (['time','latitude','longitude'], temp)},
+# #                  coords={'longitude' : x,
+# #                          'latitude' : y,
+# #                          'time' : tm})
+# dsn = xr.Dataset({'tavg' : ['time','latitude','longitude']},
+#                  coords={'longitude' : x,
+#                          'latitude' : y,
+#                          'time' : tm})
+
+
+# modeltime = hm.set_modeltime(
+#     datetime.datetime(2003,6,1,0,0),
+#     datetime.datetime(2004,6,10,0,0),
+#     datetime.timedelta(days=1)
+# )
 
 # coords = {}
 # with xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4') as ds:
