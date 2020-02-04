@@ -4,7 +4,8 @@
 from configparser import ConfigParser, ExtendedInterpolation
 import os
 import time
-import datetime
+# import datetime
+import pandas as pd
 import shutil
 import glob
 
@@ -15,30 +16,47 @@ import glob
 import logging
 logger = logging.getLogger(__name__)
 
-class Configuration(object):
+required_config_sections = []
 
+class Configuration(object):
     def __init__(
             self,
             config_filename,
-            debug_mode = False# ,
-            # no_modification = True,
-            # system_arguments = None,
-            # relative_ini_weather_paths = False
+            debug_mode = False
     ):
-        object.__init__(self)
         if config_filename is None:
-            raise ValueError('No configuration file specified')
+            raise ValueError(
+                'No configuration file specified'
+            )
+        
+        config_filename = os.path.abspath(config_filename)
+        if not os.path.exists(config_filename):
+            raise ValueError(
+                'Specified configuration file '
+                + config_filename + ' does not exist'
+            )
+        self.config_filename = config_filename
+        self._timestamp = pd.Timestamp.now()
+        self._debug_mode = debug_mode
+        self.parse_config_file(self.config_filename)
+        self.set_config(system_arguments)
 
-        self._timestamp = datetime.datetime.now()
-        self.iniFileName = os.path.abspath(iniFileName)
-        self.debug_mode = debug_mode
-        self.parse_configuration_file(self.iniFileName)
-        if no_modification: self.set_configuration(system_arguments)
-
-    def set_configuration(self, system_arguments = None):
-        self.repair_ini_key_names()
-        self.set_clone_map()
-        self.set_land_mask()
+    def parse_config_file(self):
+        """Parse the configuration file."""
+        config = ConfigParser(interpolation=ExtendedInterpolation())
+        config.optionxform = str
+        config.read(self.config_filename)
+        self.config_sections = config.sections()
+        for section in self.config_sections:
+            vars(self)[section] = {}
+            options = config.options(section)
+            for option in options:
+                val = config.get(section, option)
+                self.__getattribute__(section)[option] = val
+        
+    def set_config(self, system_arguments = None):
+        self.check_required_options()
+        self.assign_default_options()
         self.create_output_directories()
         self.create_coupling_directories()        
         self.repair_logging_key_names()
@@ -50,12 +68,10 @@ class Configuration(object):
         and a log file, at configurable levels.
         """
         logging.getLogger().setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+        formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')        
         log_level_console = self.LOGGING['log_level_console']        
         log_level_file = self.LOGGING['log_level_file']        
-
-        # log level for debug mode:
-        if self.debug_mode == True: 
+        if self._debug_mode == True: 
             log_level_console = "DEBUG"
             log_level_file    = "DEBUG"
 
@@ -63,26 +79,23 @@ class Configuration(object):
         if not isinstance(console_level, int):
             raise ValueError('Invalid log level: %s', log_level_console)
         
-        # create handler, add to root logger
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         console_handler.setLevel(console_level)
         logging.getLogger().addHandler(console_handler)
 
-        # log file name (and location)
-        if log_file_location != "Default":  self.logFileDir = log_file_location
+        if log_file_location != "Default":
+            self.logFileDir = log_file_location
         log_filename = os.path.join(
             self.logFileDir,
-            os.path.basename(self.iniFileName) + '_'
+            os.path.basename(self.config_filename) + '_'
             + str(self._timestamp.isoformat()).replace(":",".")
             + '.log'
         )
-
         file_level = getattr(logging, log_level_file.upper(), logging.DEBUG)
         if not isinstance(console_level, int):
             raise ValueError('Invalid log level: %s', log_level_file)
 
-        # create handler, add to root logger
         file_handler = logging.FileHandler(log_filename)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(file_level)
@@ -90,12 +103,11 @@ class Configuration(object):
         
         dbg_filename = os.path.join(
             self.logFileDir,
-            os.path.basename(self.iniFileName) + '_'
+            os.path.basename(self.config_filename) + '_'
             +  str(self._timestamp.isoformat()).replace(":",".")
             + '.dbg'
         )
         
-        # create handler, add to root logger
         debug_handler = logging.FileHandler(dbg_filename)
         debug_handler.setFormatter(formatter)
         debug_handler.setLevel(logging.DEBUG)
@@ -107,10 +119,13 @@ class Configuration(object):
         logger.info('Debugging output to %s', dbg_filename)
         
         if system_arguments != None:
-            logger.info('The system arguments given to execute this run: %s', system_arguments)        
+            logger.info(
+                'The system arguments given to execute this run: %s',
+                system_arguments
+            )        
 
     def backup_configuration(self):
-        """Function to copy ini file to log directory"""
+        """Copy config file to log directory."""
         backup_location = os.path.join(
             self.logFileDir,
             os.path.basename(self.iniFileName) + '_'
@@ -119,30 +134,17 @@ class Configuration(object):
         )
         shutil.copy(self.iniFileName, backup_location)
         
-    def parse_configuration_file(self, modelFileName):
-        config = ConfigParser(interpolation=ExtendedInterpolation())
-        config.optionxform = str
-        config.read(modelFileName)
-        self.allSections = config.sections()
-        for section in self.allSections:
-            vars(self)[section] = {}
-            options = config.options(section)
-            for option in options:
-                val = config.get(section, option)
-                self.__getattribute__(section)[option] = val
+    # def set_clone_map(self):
+    #     try:
+    #         self.cloneMap = str(self.MODEL_GRID['cloneMap'])
+    #     except:
+    #         self.cloneMap = None
 
-    def set_clone_map(self):
-        try:
-            self.cloneMap = str(self.MODEL_GRID['cloneMap'])
-        except:
-            self.cloneMap = None
-
-    def set_land_mask(self):
-        try:
-            self.landmask = str(self.MODEL_GRID['landmask'])
-        except:
-            self.landmask = None
-            
+    # def set_land_mask(self):
+    #     try:
+    #         self.landmask = str(self.MODEL_GRID['landmask'])
+    #     except:
+    #         self.landmask = None            
     def create_output_directories(self):
         cleanOutputDir = False
         if cleanOutputDir:
@@ -166,18 +168,6 @@ class Configuration(object):
             shutil.rmtree(self.outNCDir)
         os.makedirs(self.outNCDir)
 
-        # self.scriptDir = os.path.join(self.FILE_PATHS['PathOut'], 'scripts')
-        # if os.path.exists(self.scriptDir):
-        #     shutil.rmtree(self.scriptDir)
-        # os.makedirs(self.scriptDir)
-
-        # # copy scripts from the current directory to the backup 
-        # path_of_this_module = os.path.abspath(os.path.dirname(__file__))
-        # self.starting_directory = path_of_this_module
-        # all_files = glob.glob(os.path.join(path_of_this_module, '*.py'))
-        # for filename in all_files:
-        #     shutil.copy(filename, self.scriptDir)
-        
         self.logFileDir = os.path.join(self.FILE_PATHS['PathOut'], 'log')        
         cleanLogDir = True
         if os.path.exists(self.logFileDir) and cleanLogDir:
@@ -188,18 +178,59 @@ class Configuration(object):
         if os.path.exists(self.endStateDir):
             shutil.rmtree(self.endStateDir)
         os.makedirs(self.endStateDir)
-
+    
     def create_coupling_directories(self):
         pass
 
-    def repair_logging_key_names(self):
-        if 'LOGGING' not in self.allSections:
+    def assign_default_options(self):
+        self._assign_default_logging_options()
+        self._assign_default_file_path_options()
+                    
+    def assign_default_logging_options(self):
+        if 'LOGGING' not in self.config_sections:
             self.LOGGING = {}
-        self.LOGGING['log_level_console'] = "INFO"
-        self.LOGGING['log_level_file'] = "INFO"
+        if 'log_level_console' not in self.LOGGING:
+            self.LOGGING['log_level_console'] = 'INFO',
+        if 'log_level_file' not in self.LOGGING:
+            self.LOGGING['log_level_file'] = 'INFO',
+            
+    def assign_default_file_path_options(self):
+        if 'FILE_PATHS' not in self.config_sections:
+            self.FILE_PATHS = {}
+        if 'in_path' not in self.FILE_PATHS:
+            self.FILE_PATHS['in_path'] = '.'
+        if 'out_path' not in self.FILE_PATHS:
+            self.FILE_PATHS['in_path'] = '.'
+
+    def assign_default_reporting_options(self):
+        if 'REPORTING' not in self.config_sections:
+            self.REPORTING = {}
+        if 'report' not in self.REPORTING:
+            self.REPORTING['report'] = False
+            
+    def check_required_options(self):
+        self._default_config_check('MODEL_GRID', ['mask'])
         
-    def repair_ini_key_names(self):
-        """This function is used to change or modify key names of
-        options, to check the validity of options and to infill 
-        missing keys"""
-        pass
+    def _default_config_check(self, section, options):
+        if section not in self.config_sections:
+            raise KeyError(
+                self.generate_missing_section_message(section)
+            )
+        else:
+            for option in options:
+                if option not in vars(self)[section]:
+                    raise KeyError(
+                        self.generate_missing_option_message(section, option)
+                    )
+                
+    def generate_missing_section_message(self, section):
+        return 'Configuration file ' + self.config_filename \
+            + ' does not contain section ' + section \
+            + ', which must be supplied'
+
+    def generate_missing_option_message(self, section, option):
+        return 'Section ' + section + ' in configuration file ' \
+            + self.config_filename + ' does not contain option ' \
+            + option + ', which must be supplied'
+
+
