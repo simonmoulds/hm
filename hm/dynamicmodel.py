@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .dynamicPCRasterBase import DynamicModel
+from pcraster.dynamicPCRasterBase import DynamicModel
 from .Reporting import Reporting, DummyReporting
 
 import logging
 logger = logging.getLogger(__name__)
 
-# TODO: it's not exactly clear how the DynamicModel class is being used - do some more investigation
-
-class DeterministicRunner(DynamicModel):    
+class HmDynamicModel(DynamicModel):    
     def __init__(
             self,
             model,
@@ -28,7 +26,7 @@ class DeterministicRunner(DynamicModel):
         report : boolean
         """
         DynamicModel.__init__(self)
-        self.modelTime = modelTime
+        self.modeltime = modeltime
         self.model = model(
             config,
             modelTime,
