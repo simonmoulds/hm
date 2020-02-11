@@ -62,7 +62,7 @@ def test_open_hmdataarray():
 # import xarray as xr
 # mask = xr.open_rasterio('test_data/ghana_landmask_0pt25degree.tif')
 # mask = mask.sel(band=1)
-# da = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')['tavg']
+# da = xr.open_dataset('test_data/AgMERRA_2003_tavg.nc4')
 # # da2 = da.transpose('latitude','longitude','time')
 # da = xr.load_dataset('/data/WFDEI/PSurf_daily_WFDEI/PSurf_daily_WFDEI_200001.nc', decode_times=False)
 

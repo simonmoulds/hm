@@ -10,6 +10,8 @@ import numpy as np
 import rasterio
 import xarray as xr
 
+from .api import set_domain
+
 class Model(object):
     def __init__(
             self,
@@ -17,11 +19,9 @@ class Model(object):
             time,
             init=None
     ):
-        self._config = config
-        self._time = modeltime
-        self.set_domain()
-    def set_domain(self):
-        self._domain = set_domain(self._config.mask, self._time)
+        self.config = config
+        self.time = time
+        self.domain = set_domain(self.config.MODEL_GRID['mask'], self.time)
         
 # class Model(object):
     

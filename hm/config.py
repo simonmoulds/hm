@@ -4,14 +4,11 @@
 from configparser import ConfigParser, ExtendedInterpolation
 import os
 import time
-# import datetime
 import pandas as pd
 import shutil
 import glob
 
-# from . import file_handling
-# from . import disclaimer
-# from .Messages import ModelError, ModelFileError, ModelWarning
+from . import disclaimer
 
 import logging
 logger = logging.getLogger(__name__)
@@ -22,7 +19,8 @@ class Configuration(object):
     def __init__(
             self,
             config_filename,
-            debug_mode = False
+            debug_mode = False,
+            system_arguments = None
     ):
         if config_filename is None:
             raise ValueError(
@@ -38,7 +36,7 @@ class Configuration(object):
         self.config_filename = config_filename
         self._timestamp = pd.Timestamp.now()
         self._debug_mode = debug_mode
-        self.parse_config_file(self.config_filename)
+        self.parse_config_file()#self.config_filename)
         self.set_config(system_arguments)
 
     def parse_config_file(self):
@@ -59,7 +57,7 @@ class Configuration(object):
         self.assign_default_options()
         self.create_output_directories()
         self.create_coupling_directories()        
-        self.repair_logging_key_names()
+        # self.repair_logging_key_names()
         self.initialize_logging("Default", system_arguments)
         self.backup_configuration()
 
@@ -128,11 +126,11 @@ class Configuration(object):
         """Copy config file to log directory."""
         backup_location = os.path.join(
             self.logFileDir,
-            os.path.basename(self.iniFileName) + '_'
+            os.path.basename(self.config_filename) + '_'
             + str(self._timestamp.isoformat()).replace(":",".")
             + '.ini'
         )
-        shutil.copy(self.iniFileName, backup_location)
+        shutil.copy(self.config_filename, backup_location)
         
     # def set_clone_map(self):
     #     try:
@@ -158,6 +156,10 @@ class Configuration(object):
         except:
             pass
 
+        # TODO - put this somewhere more logical
+        self.output_directory = self.FILE_PATHS['PathOut']
+        self.output_prefix = ''
+        
         self.tmpDir = os.path.join(self.FILE_PATHS['PathOut'], 'tmp')
         if os.path.exists(self.tmpDir):
             shutil.rmtree(self.tmpDir)
@@ -183,16 +185,16 @@ class Configuration(object):
         pass
 
     def assign_default_options(self):
-        self._assign_default_logging_options()
-        self._assign_default_file_path_options()
+        self.assign_default_logging_options()
+        self.assign_default_file_path_options()
                     
     def assign_default_logging_options(self):
         if 'LOGGING' not in self.config_sections:
             self.LOGGING = {}
         if 'log_level_console' not in self.LOGGING:
-            self.LOGGING['log_level_console'] = 'INFO',
+            self.LOGGING['log_level_console'] = 'INFO'
         if 'log_level_file' not in self.LOGGING:
-            self.LOGGING['log_level_file'] = 'INFO',
+            self.LOGGING['log_level_file'] = 'INFO'
             
     def assign_default_file_path_options(self):
         if 'FILE_PATHS' not in self.config_sections:

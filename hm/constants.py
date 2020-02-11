@@ -17,7 +17,7 @@ controlled_dim_names = allowed_y_dim_names + allowed_x_dim_names + allowed_z_dim
 # ######################################################## #
 
 intervals = ['hourly', 'three_hourly', 'daily', 'dekadal', 'month', 'year']
-summaries = ['mean', 'max', 'min', 'end']
+summaries = ['mean', 'max', 'min', 'end', 'total']
 allowed_reporting_options = []
 for interval in intervals:
     for summary in summaries:

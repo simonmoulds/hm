@@ -426,15 +426,15 @@ class FrameworkBase(shellscript.ShellScript):
 
     self._userModel()._d_inPostmc = False
 
-  def _report(self, variable, name):
-    """
-    Report map data to disk.
+  # def _report(self, variable, name):
+  #   """
+  #   Report map data to disk.
 
-    .. todo::
+  #   .. todo::
 
-      Uses PCRaster package which isn't imported.
-    """
-    pcraster.report(variable, name)
+  #     Uses PCRaster package which isn't imported.
+  #   """
+  #   pcraster.report(variable, name)
 
   def _generateName(self, name):
     """
@@ -488,82 +488,82 @@ class FrameworkBase(shellscript.ShellScript):
   def generateNameS(self, name, sample):
     return generateNameS(name, sample)
 
-  def _reportNew(self,
-    variable,
-    name,
-    style=1):
-    """
+  # def _reportNew(self,
+  #   variable,
+  #   name,
+  #   style=1):
+  #   """
 
-    .. todo::
+  #   .. todo::
 
-      `style` argument is not used.
-    """
-    head, tail = os.path.split(name)
+  #     `style` argument is not used.
+  #   """
+  #   head, tail = os.path.split(name)
 
-    if re.search("\.", tail):
-      msg = "File extension given in '" + name + "' not allowed, provide filename without extension"
-      raise FrameworkError(msg)
+  #   if re.search("\.", tail):
+  #     msg = "File extension given in '" + name + "' not allowed, provide filename without extension"
+  #     raise FrameworkError(msg)
 
-    directoryPrefix = ""
-    nameSuffix = ".map"
-    newName = ""
+  #   directoryPrefix = ""
+  #   nameSuffix = ".map"
+  #   newName = ""
 
-    if hasattr(self._userModel(), "_inStochastic"):
-      if self._userModel()._inStochastic():
-        if self._userModel()._inPremc():
-          newName = name + nameSuffix
-        elif self._userModel()._inPostmc():
-          newName = name + nameSuffix
-        else:
-          directoryPrefix = str(self._userModel().currentSampleNumber())
+  #   if hasattr(self._userModel(), "_inStochastic"):
+  #     if self._userModel()._inStochastic():
+  #       if self._userModel()._inPremc():
+  #         newName = name + nameSuffix
+  #       elif self._userModel()._inPostmc():
+  #         newName = name + nameSuffix
+  #       else:
+  #         directoryPrefix = str(self._userModel().currentSampleNumber())
 
-    if self._userModel()._inInitial():
-      newName = name + nameSuffix
+  #   if self._userModel()._inInitial():
+  #     newName = name + nameSuffix
 
-    if hasattr(self._userModel(), "_inDynamic"):
-      if self._userModel()._inDynamic() or self._inUpdateWeight():
-        newName = generateNameT(name, self._userModel().currentTimeStep())
+  #   if hasattr(self._userModel(), "_inDynamic"):
+  #     if self._userModel()._inDynamic() or self._inUpdateWeight():
+  #       newName = generateNameT(name, self._userModel().currentTimeStep())
 
-    path = os.path.join(directoryPrefix, newName)
-    import pcraster
-    pcraster.report(variable, path)
+  #   path = os.path.join(directoryPrefix, newName)
+  #   import pcraster
+  #   pcraster.report(variable, path)
 
-  def _readmapNew(self, name,
-    style=1):
-    """
+  # def _readmapNew(self, name,
+  #   style=1):
+  #   """
 
-    .. todo::
+  #   .. todo::
 
-      `style` argument is not used.
-    """
-    directoryPrefix = ""
-    nameSuffix = ".map"
-    newName = ""
+  #     `style` argument is not used.
+  #   """
+  #   directoryPrefix = ""
+  #   nameSuffix = ".map"
+  #   newName = ""
 
-    if hasattr(self._userModel(), "_inStochastic"):
-      if self._userModel()._inStochastic():
-        if self._userModel()._inPremc() or self._userModel()._inPostmc():
-          newName = name + nameSuffix
-        else:
-          directoryPrefix = str(self._userModel().currentSampleNumber())
+  #   if hasattr(self._userModel(), "_inStochastic"):
+  #     if self._userModel()._inStochastic():
+  #       if self._userModel()._inPremc() or self._userModel()._inPostmc():
+  #         newName = name + nameSuffix
+  #       else:
+  #         directoryPrefix = str(self._userModel().currentSampleNumber())
 
-    if hasattr(self._userModel(), "_inInitial"):
-      if self._userModel()._inInitial():
-        newName = name + nameSuffix
+  #   if hasattr(self._userModel(), "_inInitial"):
+  #     if self._userModel()._inInitial():
+  #       newName = name + nameSuffix
 
-    if self._inResume():
-      timestep = self._userModel().firstTimeStep()
-      newName = generateNameT(name, timestep - 1)
+  #   if self._inResume():
+  #     timestep = self._userModel().firstTimeStep()
+  #     newName = generateNameT(name, timestep - 1)
 
-    if hasattr(self._userModel(), "_inDynamic"):
-      if self._userModel()._inDynamic() or self._inUpdateWeight():
-        timestep = self._userModel().currentTimeStep()
-        newName = generateNameT(name, timestep)
+  #   if hasattr(self._userModel(), "_inDynamic"):
+  #     if self._userModel()._inDynamic() or self._inUpdateWeight():
+  #       timestep = self._userModel().currentTimeStep()
+  #       newName = generateNameT(name, timestep)
 
-    path = os.path.join(directoryPrefix, newName)
-    assert path is not ""
-    import pcraster
-    return pcraster.readmap(path)
+  #   path = os.path.join(directoryPrefix, newName)
+  #   assert path is not ""
+  #   import pcraster
+  #   return pcraster.readmap(path)
 
   def _assertAndThrow(self,
     expression,

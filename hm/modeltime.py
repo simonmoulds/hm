@@ -29,7 +29,7 @@ class ModelTime(object):
         """
         self._starttime = pd.Timestamp(starttime)
         self._endtime = pd.Timestamp(endtime)
-        self._dt = timedelta
+        self._dt = pd.Timedelta(timedelta)
         if (endtime - starttime) % timedelta == datetime.timedelta(0):
             self._n_timesteps = (endtime - starttime) / timedelta
         else:
@@ -73,7 +73,9 @@ class ModelTime(object):
     @property    
     def curr_time(self):
         return self._curr_time
-
+    @property
+    def timestamp(self):
+        return pd.Timestamp(self._curr_time)
     @property    
     def day(self):
         return self._curr_time.day
@@ -132,7 +134,7 @@ class ModelTime(object):
     def update(self, timestep):
         self._timestep = timestep
         # self._curr_time = self._starttime + datetime.timedelta(days=1 * (timeStepPCR - 1))
-        self._curr_time = self._times[self._timestep]        
+        self._curr_time = self._times[(self._timestep - 1)]        
         # self._fulldate = '%04i-%02i-%02i' % (self._curr_time.year, self._curr_time.month, self._curr_time.day)
         self._fulldate = self._curr_time.strftime("%Y-%m-%d %H:%M:%S")
         # if self.spinUpStatus == True : 
@@ -145,7 +147,8 @@ class ModelTime(object):
             self._month_index = self._month_index + 1
         if self.is_last_day_of_year():
             self._year_index = self._year_index + 1
-            
+
+    @property
     def is_first_timestep(self):
         return self.timestep == 1
 
@@ -184,4 +187,4 @@ class ModelTime(object):
         return str(self._curr_time)
 
     def __len__(self):
-        return self._n_timesteps
+        return int(self._n_timesteps)

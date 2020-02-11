@@ -113,6 +113,16 @@ class HmDomain(HmDataset):
     which computations are performed.
     """
     @property
+    def is_latlon(self):
+        # TODO
+        return True
+    @property
+    def y(self):
+        return self._coords['y']
+    @property
+    def x(self):
+        return self._coords['x']
+    @property
     def area(self):
         return self._data['area']
     @property
@@ -231,7 +241,8 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         self._nc_data = nc_dataset# nc.Dataset(filename_or_obj, 'r')
         self._nc_coords = get_nc_coordinates(self._nc_data, self._dims)
         self._get_nc_index()
-        
+        self.select(time=self._domain.starttime, method='nearest')
+                    
     def _get_nc_index(self):
         """Map xarray to underlying netCDF4 dataset.
         
@@ -242,9 +253,10 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         for i, (dim, dimname) in enumerate(self._dims.items()):
             nc_dim = self._nc_coords[dim]
             xr_dim = self.index[dimname]
-            nc_slice[i] = match(xr_dim, nc_dim)
+            index = match(xr_dim, nc_dim)
+            nc_slice[i] = index
         self._nc_index = nc_slice
-        
+
     def select(self, time, **kwargs):
         """Select a temporal subset of the data.
 
@@ -261,19 +273,34 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         # select time using xarray selection
         xr_data = self._data.sel({self._dims['time'] : time}, **kwargs)
         xr_time = xr_data[self._dims['time']].values
-        slc = self._nc_index
+        
         # match xarray times with those in netCDF4 file (there should always be a match)
-        slc[self._axes['time']] = match(xr_time, self.nc_time)
-        return self._nc_data.variables[self._varname][slc]
-
-    def to_netcdf(self, path, **kwargs):
-        # TODO: wrapper to open netcdf file
-        try:
-            ds = nc.Dataset(path, 'r+')
-        except FileNotFoundError:
-            ds = nc.Dataset(path, 'w')
-        pass
-    
+        mf_time_index = match(xr_time, self.nc_time)
+        
+        # index of times in individual netCDF4 files
+        time_index = self._nc_coords['_index'][mf_time_index]
+        
+        # index of files over which the time index is spread
+        file_index = np.unique(self._nc_coords['_file'][mf_time_index])        
+        slc = self._nc_index.copy()
+        if len(file_index) == 1:
+            slc[self._axes['time']] = time_index
+            values = self._nc_data[file_index[0]].variables[self._varname][slc]
+        elif len(file_index) > 1:
+            values = []
+            for i in file_index:
+                slc[self._axes['time']] = time_index[file_index == i]
+                values.append(self._nc_data[file_index[i]].variables[self._varname][slc])
+            values = np.concatenate(values, axis=self._axis['time'])
+        self.values = values[self._domain.mask]
+        
+    # def to_netcdf(self, path, **kwargs):
+    #     # TODO: wrapper to open netcdf file
+    #     try:
+    #         ds = nc.Dataset(path, 'r+')
+    #     except FileNotFoundError:
+    #         ds = nc.Dataset(path, 'w')
+    #     pass    
     @property
     def nc_time(self):
         return self._nc_coords[self._dims['time']]

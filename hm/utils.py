@@ -123,6 +123,7 @@ def reshape_array(arr, mask):
     return np.ma.array(arr, mask=np.broadcast_to(mask, arr.shape))
 
 def match(x, table):
+    # TODO: document
     table_sorted = np.argsort(table)
     x_pos = np.searchsorted(table[table_sorted], x)
     return table_sorted[x_pos]
@@ -144,7 +145,7 @@ def get_spatial_extent(coords):
     ymax = np.max(coords.y) + (yres / 2.)
     return Box(left=xmin, right=xmax, top=ymax, bottom=ymin, frozen_box=True)
 
-# def get_dimension_names(dims, is_1d, xy_dimname):
+# def get_dimxension_names(dims, is_1d, xy_dimname):
 #     dimnames = OrderedDict()
 #     for dim in dims:
 #         if is_1d & (dim == xy_dimname):
@@ -208,14 +209,26 @@ def decode_nc_times(timevar):
     times = nc.num2date(timevar[:], timevar.units, calendar)
     return np.array(times, dtype='datetime64')
 
-def get_nc_coordinates(dataset, dimnames):
+def get_nc_coordinates(dataset, dimnames):    
     coords = OrderedDict()
     for dim, dimname in dimnames.items():
         if dimname is not None:
             if dim is 'time':
-                coords[dim] = decode_nc_times(dataset.variables[dimname])
+                time_coord = []
+                index_coord = []
+                file_coord = []
+                for i, _ in enumerate(dataset):
+                    # TODO: check assumption that files are ordered by times
+                    times = decode_nc_times(dataset[i].variables[dimname])
+                    time_coord.append(times)
+                    file_coord.append(np.array([i] * len(times), dtype=np.int32))
+                    index_coord.append(np.arange(len(times)))
+                coords[dim] = np.concatenate(time_coord)
+                coords['_file'] = np.concatenate(file_coord)
+                coords['_index'] = np.concatenate(index_coord)
             else:
-                coords[dim] = dataset.variables[dimname][:].data
+                # TODO: check assumption that files have the same spatial/pseudo coordinates
+                coords[dim] = dataset[0].variables[dimname][:].data
                 
     return Box(coords, frozen_box=True)
 
@@ -246,23 +259,22 @@ def get_nc_coordinates(dataset, dimnames):
 #         raise ValueError(msg)    
 #     return timestr
 
-# def get_format_args(x):
-#     """Function to get format arguments from a string. This is
-#     useful to work out whether input data files are provided
-#     on a monthly or yearly basis
-#     """
-#     format_args = [tup[1] for tup in string.Formatter().parse(x) if tup[1] is not None]
-#     return format_args
+def get_format_args(x):
+    """Function to get format arguments from a string. This is
+    useful to work out whether input data files are provided
+    on a monthly or yearly basis
+    """
+    format_args = [tup[1] for tup in string.Formatter().parse(x) if tup[1] is not None]
+    return format_args
 
-# def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
-#     """Function to check format arguments meet certain
-#     conditions.
-#     """
-#     format_args_ok = all([arg in allowable_args for arg in format_args])
-#     if format_args_ok and not allow_duplicates:
-#         format_args_ok = not any_duplicates(format_args)
-#     return format_args_ok
-
+def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
+    """Function to check format arguments meet certain
+    conditions.
+    """
+    format_args_ok = all([arg in allowable_args for arg in format_args])
+    if format_args_ok and not allow_duplicates:
+        format_args_ok = not any_duplicates(format_args)
+    return format_args_ok
     
 # contents of old file_handling.py:
 
