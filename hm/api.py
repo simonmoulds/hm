@@ -28,6 +28,8 @@ def set_domain(
         area_varname=None,
         is_1d=False,
         xy_dimname=None,
+        z_coords=None,
+        pseudo_coords=None,
         **kwargs):
     
     """Open data array which defines the model domain.
@@ -52,11 +54,25 @@ def set_domain(
         cell area; in these cases it is perfectly fine to use 
         an arbitrary value (e.g. 1)
     is_1d : bool, optional
-        Boolean indicating whether space is represented as a
-        2-dimensional grid or 1-dimensional set of points
+        Whether space is represented as a 2-dimensional
+        grid or 1-dimensional set of points
     xy_dimname : str, optional
-        If `is_1d = True`, this `xy_dimname` is the name of the
+        If `is_1d = True`, then `xy_dimname` is the name of the
         space dimension in `filename_or_obj`
+    pseudo_coords : dict 
+        Pseudo coordinates are defined as coordinates which are
+        typically used in hydrological models to represent 
+        sub-grid variables (e.g. land use/land cover types), 
+        but may be used for other purposes (e.g. ensemble
+        simulations). The dictionary keys should match the 
+        name of the corresponding dimension in any input netCDF
+        file, as well as the name used in the `variable_list`
+        module for model implementations build on the `hm`
+        infrastructure. Dictionary values should be a
+        1-dimensional numpy array with the value of each 
+        coordinate (typically a sequence of integers)
+    **kwargs : any 
+        Keyword arguments passed to `xarray.open_dataset()`
     
     Returns
     -------
@@ -65,10 +81,9 @@ def set_domain(
     """
     if is_1d & (xy_dimname is None):
         raise ValueError(
-            "If domain dataset is one dimensional then the "
-            "name of the space dimension must be specified."
-        )
-    
+            'If domain dataset is one dimensional then the '
+            'name of the space dimension must be specified.'
+        )    
     try:
         ds = xr.open_dataset(filename_or_obj, **kwargs)
         if is_temporal(ds):
@@ -145,8 +160,19 @@ def set_domain(
     mask = mask.astype(bool).rename(rename_dict)
     area = area.rename(rename_dict)
     coords.update({'time' : modeltime.times})
-    dims.update({'time' : 'time'})
-    ds = xr.merge([xr.Dataset(coords), mask, area])
+
+    # join z, pseudo coordinates
+    if z_coords is None:
+        z_coords = {}
+    if pseudo_coords is None:
+        pseudo_coords = {}
+
+    try:
+        all_coords = {**z_coords, **pseudo_coords, **coords}
+        # all_coords = {**pseudo_coords, **coords}
+    except:
+        all_coords = coords        
+    ds = xr.merge([xr.Dataset(all_coords), mask, area])
     return HmDomain(ds, is_1d=is_1d, xy_dimname='xy')
     
 def _get_files_covering_time_period(filename_or_obj, domain):
@@ -225,6 +251,7 @@ def open_hmdataarray(
         is_1d=False,
         xy_dimname=None,
         use_xarray=True,
+        xarray_kwargs={},
         **kwargs
 ):
     """Open a dataset from a file or file-like object.
@@ -234,16 +261,17 @@ def open_hmdataarray(
     filename_or_obj : str 
         String or object which is passed to xarray
     variable : str 
-        The name of the variable
+        The name of the variable to read
     domain : HmDomain 
-        Defines the spatio-temporal model domain
+        The spatio-temporal model domain
     is_1d : bool, optional
-        Boolean indicating whether space is represented as a
-        2-dimensional grid or 1-dimensional set of points
+        Whether space is represented as a 2-dimensional
+        grid or 1-dimensional set of points
     xy_dimname : str, optional
-        If `is_1d = True`, this `xy_dimname` is the name of the
+        If `is_1d = True`, then `xy_dimname` is the name of the
         space dimension in `filename_or_obj`
     use_xarray : bool, optional
+        Currently not used
 
     Returns
     -------
@@ -257,7 +285,7 @@ def open_hmdataarray(
     --------
     TODO
     """
-    ds = _open_xarray_dataset(filename_or_obj, domain, **kwargs)    
+    ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)    
     da = ds[variable]
     dims = get_xr_dimension_names(da, is_1d, xy_dimname)
     coords = get_xr_coordinates(da, dims)
@@ -266,14 +294,15 @@ def open_hmdataarray(
             'DataArray object is specified as one-dimensional but does '
             'not contain space dimension ' + xy_dimname
         )
-    
-    all_dims_in_domain = all(dim in domain.dims for dim in dims.keys())
-    if not all_dims_in_domain:
-        missing_dims = [value for key,value in dims.items() if key not in domain.dims]
-        raise ValueError(
-            'DataArray object has dimensions which are not specified in '
-            'the model domain: ' + ', '.join(missing_dims)
-        )
+
+    # TODO: evaluate whether we need this check?
+    # all_dims_in_domain = all(dim in domain.dims for dim in dims.keys())
+    # if not all_dims_in_domain:
+    #     missing_dims = [value for key,value in dims.items() if key not in domain.dims]
+    #     raise ValueError(
+    #         'DataArray object has dimensions which are not specified in '
+    #         'the model domain: ' + ', '.join(missing_dims)
+    #     )
     
     temporal = is_temporal(da)
     spatial = is_spatial(da, is_1d, xy_dimname)
@@ -339,10 +368,10 @@ def open_hmdataarray(
         # (spatio-)temporal data).
         nc_dataset = _open_netcdf_dataset(filename_or_obj, domain)
         if spatial:
-            hm = HmSpaceTimeDataArray(da, nc_dataset, variable, domain, is_1d, xy_dimname)
+            hm = HmSpaceTimeDataArray(da, nc_dataset, variable, domain, is_1d, xy_dimname, **kwargs)
         else:
-            hm = HmTimeDataArray(da, nc_dataset, domain)
+            hm = HmTimeDataArray(da, nc_dataset, domain, **kwargs)
     else:
-        hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname)
+        hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname, **kwargs)
 
     return hm

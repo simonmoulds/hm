@@ -211,7 +211,23 @@ class Configuration(object):
             self.REPORTING['report'] = False
             
     def check_required_options(self):
+        # MODEL_GRID
         self._default_config_check('MODEL_GRID', ['mask'])
+        if 'mask_varname' not in self.MODEL_GRID:
+            self.MODEL_GRID['mask_varname'] = None
+        if 'area_varname' not in self.MODEL_GRID:
+            self.MODEL_GRID['area_varname'] = None
+        if 'is_1d' not in self.MODEL_GRID:
+            self.MODEL_GRID['is_1d'] = False
+        if 'xy_dimname' not in self.MODEL_GRID:
+            self.MODEL_GRID['xy_dimname'] = None
+            
+        # PSEUDO_COORDS
+        if 'PSEUDO_COORDS' not in self.config_sections:
+            self.PSEUDO_COORDS = {}
+        else:
+            # TODO - interpret coordinates
+            pass
         
     def _default_config_check(self, section, options):
         if section not in self.config_sections:
@@ -234,5 +250,3 @@ class Configuration(object):
         return 'Section ' + section + ' in configuration file ' \
             + self.config_filename + ' does not contain option ' \
             + option + ', which must be supplied'
-
-

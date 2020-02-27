@@ -7,7 +7,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DynamicModel(object):
-
   def __init__(self):
     self.silentModelOutput = False
     self._d_nrTimeSteps = 0
@@ -140,6 +139,7 @@ class HmDynamicModel(DynamicModel):
         model,
         config,
         modeltime,
+        domain,
         variable_list,
         init = None
     ):
@@ -158,7 +158,9 @@ class HmDynamicModel(DynamicModel):
         self.model = model(
             config,
             modeltime,
-            init)
+            domain,
+            init
+        )
         self.model.initial()
         if config.REPORTING['report'] == 'True':
             self.reporting = Reporting(self.model, variable_list)
@@ -172,4 +174,4 @@ class HmDynamicModel(DynamicModel):
         self.model.time.update(self.currentTimeStep())
         self.model.dynamic()
         # self.reporting.report()
-        self.reporting.update()
+        self.reporting.dynamic()

@@ -1,18 +1,24 @@
 import datetime
 import hm.api as hm
-import xarray
+import xarray as xr
 import pytest
 import pandas as pd
+import numpy as np
 
-# os.chdir("test/release")
-# modeltime = hm.set_modeltime(
-#     datetime.datetime(2003,6,1,0,0),
-#     datetime.datetime(2003,6,10,0,0),
-#     datetime.timedelta(days=1)
-# )
+ds = xr.open_dataset('~/dev/aquacrop/test/example/Ch7_Ex1a_Tunis_Wheat_1979/Input/annual_co2_conc_aos_ch7_ex1a_tunis_wheat.nc')
+da = ds['co2']
+da.sel({'time':pd.Timestamp('1979-10-15 00:00:00')}, method='nearest')
+
+os.chdir("test/release")
+modeltime = hm.set_modeltime(
+    datetime.datetime(2003,6,1,0,0),
+    datetime.datetime(2003,6,10,0,0),
+    datetime.timedelta(days=1)
+)
 # domain = hm.set_domain(
 #     'test_data/ghana_landmask_0pt25degree.tif',
-#     modeltime
+#     modeltime,
+#     pseudo_coords={'crop':np.array([0,1,2,3,4])}
 # )
 # da = hm.open_hmdataarray(
 #     'test_data/AgMERRA_2003_tavg.nc4',
