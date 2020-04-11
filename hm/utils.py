@@ -19,11 +19,13 @@ from .constants import *
 # from being reopened at every timestep)
 file_cache = dict()
 
+
 def clear_cache():
     """Function to clear file cache."""
     for item in list(file_cache.keys()):
         file_cache[item].close()
         file_cache.pop(item)
+
 
 def open_netcdf(filename, **kwargs):
     if filename in list(file_cache.keys()):
@@ -33,14 +35,14 @@ def open_netcdf(filename, **kwargs):
         # f.set_auto_mask(False)
         file_cache[filename] = f
     return f
-        
+
 # def add_time_dimension(netcdf, dimname, dimvar, **kwargs):
 #     """Add time dimension to a netCDF file.
 
 #     Parameters
 #     ----------
 #     netcdf : netCDF4.Dataset
-#     dimname : str    
+#     dimname : str
 #     """
 #     shortname = variable_list.netcdf_short_name[dimname]
 #     try:
@@ -66,8 +68,8 @@ def open_netcdf(filename, **kwargs):
 #     Parameters
 #     ----------
 #     netcdf : netCDF4.Dataset
-#     dimname : str 
-#     dimvar : numpy.array 
+#     dimname : str
+#     dimvar : numpy.array
 #     """
 #     ndim = len(dimvar)
 #     shortname = variable_list.netcdf_short_name[dimname]
@@ -94,7 +96,8 @@ def open_netcdf(filename, **kwargs):
 #     var.long_name = variable_list.netcdf_long_name[dimname]
 #     var.units = variable_list.netcdf_unit[dimname]
 #     var[:] = np.array(dimvar)
-    
+
+
 def get_variable_dimensions(varname):
     """Get the dimensions of a variable."""
     if isinstance(varname, str):
@@ -103,8 +106,9 @@ def get_variable_dimensions(varname):
         var_dims = []
         for item in varname:
             var_dims += list(self.variable_list.netcdf_dimensions[item])
-        var_dims = tuple(set(var_dims))            
+        var_dims = tuple(set(var_dims))
     return var_dims
+
 
 def reshape_array(arr, mask):
     """Reshape a one-dimensional array.
@@ -122,19 +126,23 @@ def reshape_array(arr, mask):
     arr1[..., mask] = arr
     return np.ma.array(arr, mask=np.broadcast_to(mask, arr.shape))
 
+
 def match(x, table):
     # TODO: document
     table_sorted = np.argsort(table)
     x_pos = np.searchsorted(table[table_sorted], x)
     return table_sorted[x_pos]
 
+
 def is_temporal(dataarray):
     return np.any([dim in allowed_t_dim_names for dim in dataarray.dims])
+
 
 def is_spatial(dataarray, is_1d, xy_varname):
     has_x = np.any([nm in allowed_x_dim_names for nm in dataarray.dims])
     has_y = np.any([nm in allowed_y_dim_names for nm in dataarray.dims])
     return (has_x & has_y) | (is_1d & (xy_varname in dataarray.dims))
+
 
 def get_spatial_extent(coords):
     xres = coords.x[1] - coords.x[0]
@@ -149,7 +157,7 @@ def get_spatial_extent(coords):
 #     dimnames = OrderedDict()
 #     for dim in dims:
 #         if is_1d & (dim == xy_dimname):
-#             dimnames['xy'] = dim 
+#             dimnames['xy'] = dim
 #         elif dim in allowed_x_dim_names:
 #             dimnames['x'] = dim
 #         elif dim in allowed_y_dim_names:
@@ -161,7 +169,7 @@ def get_spatial_extent(coords):
 #         else:
 #             dimnames[dim] = dim
 #     return Box(dimnames, frozen_box=True)
-    
+
 # def get_nc_dimension_names(dataset, is_1d=False, xy_dimname=None):
 #     dims = dataset.dimensions
 #     return get_dimension_names(dims, is_1d, xy_dimname)
@@ -169,12 +177,13 @@ def get_spatial_extent(coords):
 # def get_xr_dimension_names(dataset_or_dataarray, is_1d=False, xy_dimname=None):
 #     dims = dataset_or_dataarray.dims
 #     return get_dimension_names(dims, is_1d, xy_dimname)
-    
+
+
 def get_xr_dimension_names(dataset_or_dataarray, is_1d=False, xy_dimname=None):
     dimnames = OrderedDict()
     for dim in dataset_or_dataarray.dims:
         if is_1d & (dim == xy_dimname):
-            dimnames['xy'] = dim 
+            dimnames['xy'] = dim
         elif dim in allowed_x_dim_names:
             dimnames['x'] = dim
         elif dim in allowed_y_dim_names:
@@ -187,12 +196,15 @@ def get_xr_dimension_names(dataset_or_dataarray, is_1d=False, xy_dimname=None):
             dimnames[dim] = dim
     return Box(dimnames, frozen_box=True)
 
+
 def get_xr_dimension_axes(dataset_or_dataarray, dimnames):
     axes = OrderedDict()
     for dim, dimname in dimnames.items():
         if dimname is not None:
-            axes[dim] = [position for position,value in enumerate(dataset_or_dataarray.dims) if value == dimname][0]
+            axes[dim] = [position for position, value in enumerate(
+                dataset_or_dataarray.dims) if value == dimname][0]
     return Box(axes, frozen_box=True)
+
 
 def get_xr_coordinates(dataset_or_dataarray, dimnames):
     coords = OrderedDict()
@@ -202,19 +214,21 @@ def get_xr_coordinates(dataset_or_dataarray, dimnames):
     return Box(coords, frozen_box=False)
     # return Box(coords, frozen_box=True)
 
+
 def decode_nc_times(timevar):
     try:
         calendar = timevar.calendar
     except AttributeError:
-        calendar = 'standard'            
+        calendar = 'standard'
     times = nc.num2date(timevar[:], timevar.units, calendar)
-    return np.array(times, dtype='datetime64')
+    return np.array(times, dtype='datetime64[D]')
 
-def get_nc_coordinates(dataset, dimnames):    
+
+def get_nc_coordinates(dataset, dimnames):
     coords = OrderedDict()
     for dim, dimname in dimnames.items():
         if dimname is not None:
-            if dim is 'time':
+            if dim == 'time':
                 time_coord = []
                 index_coord = []
                 file_coord = []
@@ -222,7 +236,8 @@ def get_nc_coordinates(dataset, dimnames):
                     # TODO: check assumption that files are ordered by times
                     times = decode_nc_times(dataset[i].variables[dimname])
                     time_coord.append(times)
-                    file_coord.append(np.array([i] * len(times), dtype=np.int32))
+                    file_coord.append(
+                        np.array([i] * len(times), dtype=np.int32))
                     index_coord.append(np.arange(len(times)))
                 coords[dim] = np.concatenate(time_coord)
                 coords['_file'] = np.concatenate(file_coord)
@@ -230,13 +245,13 @@ def get_nc_coordinates(dataset, dimnames):
             else:
                 # TODO: check assumption that files have the same spatial/pseudo coordinates
                 coords[dim] = dataset[0].variables[dimname][:].data
-                
+
     return Box(coords, frozen_box=True)
 
 # NOT USED:
 # =========
 
-# def repair_time_string(timestr):    
+# def repair_time_string(timestr):
 #     timestr = timestr.lower()
 #     timestr_split = timestr.split()
 #     units = timestr_split[0]
@@ -257,16 +272,19 @@ def get_nc_coordinates(dataset, dimnames):
 #     else:
 #         msg = "time string does not contain 'since'"
 #     if not successful:
-#         raise ValueError(msg)    
+#         raise ValueError(msg)
 #     return timestr
+
 
 def get_format_args(x):
     """Function to get format arguments from a string. This is
     useful to work out whether input data files are provided
     on a monthly or yearly basis
     """
-    format_args = [tup[1] for tup in string.Formatter().parse(x) if tup[1] is not None]
+    format_args = [tup[1]
+                   for tup in string.Formatter().parse(x) if tup[1] is not None]
     return format_args
+
 
 def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
     """Function to check format arguments meet certain
@@ -276,7 +294,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
     if format_args_ok and not allow_duplicates:
         format_args_ok = not any_duplicates(format_args)
     return format_args_ok
-    
+
 # contents of old file_handling.py:
 
 # #!/usr/bin/env python
@@ -305,7 +323,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 # import logging
 # logger = logging.getLogger(__name__)
 
-# # file cache to minimize/reduce opening/closing files.  
+# # file cache to minimize/reduce opening/closing files.
 # file_cache = dict()
 # attr_cache = dict()
 
@@ -328,39 +346,39 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #         self.open_dataset()
 #         self.rename_dimensions()
 #         self.subset_dataset()
-        
+
 #     def rename_dimensions(self):
 #         """Standardize dimension variables."""
 #         dim_names = [dim_name for dim in self.dataset.keys()]
 #         y_name = [dim for dim in allowed_y_dim_names if dim in dim_names]
 #         if len(y_name) == 1:
-#             self.dataset.rename({y_name : 'lat'})            
+#             self.dataset.rename({y_name : 'lat'})
 #         x_name = [dim for dim in allowed_x_dim_names if dim in dim_names]
 #         if len(x_name) == 1:
 #             self.dataset.rename({x_name : 'lon'})
 #         t_name = [dim for dim in allowed_x_dim_names if dim in dim_names]
 #         if len(t_name) == 1:
 #             self.dataset.rename({t_name : 'time'})
-        
+
 #     def open_dataset(self):
 #         self.dataset = xr.open_dataset(self.nc_filename)[nc_varname]
-        
+
 #     def subset_dataset(self):
 #         self.dataset_subset = self.dataset.sel(
 #             lon=self.model.clone_x_coords,
 #             lat=self.model.clone_y_coords,
 #             method='nearest'
 #         )
-        
+
 #     @property
 #     def values(self):
 #         self.dataset_subset.values
-    
-# class InputTimeVaryingNetCDF(InputNetCDF):    
+
+# class InputTimeVaryingNetCDF(InputNetCDF):
 #     def open_dataset(self):
 #         nc_filename_list = self.get_netcdf_files_covering_time_period()
 #         self.dataset = xr.open_mfdataset(nc_filename_list)
-        
+
 #     def get_netcdf_files_covering_time_period(self):
 #         delta = (self.model._modelTime.endDate - self.model._modelTime.startDate).days + 1
 #         datelist = pd.date_range(self.model._modelTime.startDate, periods=delta).to_pydatetime().tolist()
@@ -496,9 +514,9 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     else:
 #         f = read_netCDF(nc_file_name)
 #         dimension_name = str(dimension_name)
-#         dimvar = f.variables[dimension_name][:]    
+#         dimvar = f.variables[dimension_name][:]
 #     return dimvar
-    
+
 # def rename_latlong_dims(f, LatitudeLongitude):
 #     if LatitudeLongitude == True:
 #         try:
@@ -516,9 +534,9 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     elif 'tstep' in dimnames:
 #         time_dimension_name = 'tstep'
 #     else:
-#         pass    
+#         pass
 #     return time_dimension_name
-        
+
 # def get_time_variable_name(f):
 #     time_variable_name = None
 #     if 'time' in f.variables:
@@ -526,7 +544,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     elif 'timestp' in f.variables:
 #         time_variable_name = 'timestp'
 #     else:
-#         pass    
+#         pass
 #     return time_variable_name
 
 # def get_time_units(nctime):
@@ -538,10 +556,10 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     except:
 #         calendar = 'standard'
 #     return calendar
-    
+
 # # TODO: refactor; allow 1D arrays
 # def resample_nc_data(f, varName, cloneMapFileName, timeDimName = None, timeIndex = None):
-#     """Function to compare the spatial attributes of input 
+#     """Function to compare the spatial attributes of input
 #     map with those of the clone map.
 #     """
 #     var_dims = f.variables[varName].dimensions
@@ -549,7 +567,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     if (timeIndex is not None) and (timeDimName is not None):
 #         time_axis = [i for i in range(len(var_dims)) if var_dims[i] == timeDimName][0]
 #         slc[time_axis] = timeIndex
-        
+
 #     cropData = f.variables[varName][slc]
 #     input_latitudes = f.variables['lat'][:]
 #     input_longitudes = f.variables['lon'][:]  # TODO sort this out - add lat/long to attributes?
@@ -559,7 +577,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #         netcdf_y_orientation_follow_cf_convention = (input_latitudes[0] - input_latitudes[1]) > 0
 #         if not netcdf_y_orientation_follow_cf_convention:
 #             cropData = np.flip(cropData, axis=-2)
-#             input_latitudes = input_latitudes[::-1]    
+#             input_latitudes = input_latitudes[::-1]
 #         if cloneMapFileName != None:
 #             clone_map = read_GDAL(cloneMapFileName)
 #             clone_attr = get_gdal_attributes(clone_map, cloneMapFileName)
@@ -576,7 +594,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     pass
 
 # def resample_nc_data_2d(f, varName, cloneMapFileName, timeDimName = None, timeIndex = None):
-#     """Function to compare the spatial attributes of input 
+#     """Function to compare the spatial attributes of input
 #     map with those of the clone map.
 #     """
 #     var_dims = f.variables[varName].dimensions
@@ -584,7 +602,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     if (timeIndex is not None) and (timeDimName is not None):
 #         time_axis = [i for i in range(len(var_dims)) if var_dims[i] == timeDimName][0]
 #         slc[time_axis] = timeIndex
-        
+
 #     cropData = f.variables[varName][slc]
 #     input_attr = get_netcdf_attributes(f)
 #     input_latitudes = f.variables['lat'][:]
@@ -592,7 +610,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     netcdf_y_orientation_follow_cf_convention = (input_latitudes[0] - input_latitudes[1]) > 0
 #     if not netcdf_y_orientation_follow_cf_convention:
 #         cropData = np.flip(cropData, axis=-2)
-#         input_latitudes = input_latitudes[::-1]    
+#         input_latitudes = input_latitudes[::-1]
 #     if cloneMapFileName != None:
 #         clone_map = read_GDAL(cloneMapFileName)
 #         clone_attr = get_gdal_attributes(clone_map, cloneMapFileName)
@@ -605,12 +623,12 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #             cropData = regrid_data_to_finer_grid(factor, cropData, missing_value)
 #     return cropData
 
-# def crop_data(x, x_lat, x_lon, x_attr, y_attr):    
+# def crop_data(x, x_lat, x_lon, x_attr, y_attr):
 #     # longitudes are ascending (i.e. W -> E), hence we *add* half
 #     # the input cellsize to the clone map western boundary
 #     min_x = min(abs(x_lon[:] - (y_attr['xUL'] + 0.5 * x_attr['cellsize'])))
 #     xIdxSta = int(np.where(abs(x_lon[:] - (y_attr['xUL'] + 0.5 * x_attr['cellsize'])) == min_x)[0])
-#     xIdxEnd = int(math.ceil(xIdxSta + y_attr['cols'] / (x_attr['cellsize'] / y_attr['cellsize'])))        
+#     xIdxEnd = int(math.ceil(xIdxSta + y_attr['cols'] / (x_attr['cellsize'] / y_attr['cellsize'])))
 #     xStep = int((xIdxEnd - xIdxSta) / abs(xIdxEnd - xIdxSta))
 #     # latitudes are descending (i.e. N -> S), hence we *subtract*
 #     # half the input cellsize from the clone map northern boundary
@@ -623,7 +641,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     # cropData = cropData[...,ySlice, xSlice]
 #     cropData = x[...,ySlice, xSlice]
 #     return cropData
-    
+
 # def get_message_for_using_nearest_year(ncFile, varName, oldDate, newDate):
 #     msg  = "\n"
 #     msg += "WARNING related to the netcdf file: "+str(ncFile)+" ; variable: "+str(varName)+" !"+"\n"
@@ -633,7 +651,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     return msg
 
 # def get_nearest_date_to_year(year, date):
-#     """Function to get the year closest to the specified 
+#     """Function to get the year closest to the specified
 #     year if that is not available.
 #     """
 #     if date.day == 29 and date.month == 2 and calendar.isleap(date.year) and not calendar.isleap(year):
@@ -660,7 +678,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #         if date.year > last_year_in_nc_file:
 #             date = get_nearest_date_to_year(last_year_in_nc_file, date)
 #             msg = get_message_for_using_nearest_year(ncFile, varName, dateInput, date)
-#             logger.warning(msg)            
+#             logger.warning(msg)
 #     return date
 
 # def get_date_index_exact(ncFile, date, t_varname, t_unit, t_calendar):
@@ -682,7 +700,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     times_after_current_time = np.nonzero(timevar > datenum)
 #     idx = int(np.min(times_after_current_time))
 #     return idx
-        
+
 # def get_date_availability_message(date, available=True):
 #     if available:
 #         msg = ("The date %s-%s-%s is available. The 'exact' option is \n"
@@ -704,8 +722,8 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     msg += "The date "+str(date.year)+"-"+str(date.month)+"-"+str(date.day)+" is NOT available. The '"+option+"' option is used while selecting netcdf time."
 #     msg += "\n"
 #     return msg
-    
-# def get_time_index(ncFile, varName, date, t_varname, t_unit, t_calendar):    
+
+# def get_time_index(ncFile, varName, date, t_varname, t_unit, t_calendar):
 #     try:
 #         idx = get_date_index_exact(ncFile, date, t_varname, t_unit, t_calendar)
 #         msg = get_date_availability_message(date, available=True)
@@ -734,7 +752,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     msg += "The map does not have the same attributes (extent, "+"\n"
 #     msg += "resolution) as the provided model grid"
 #     msg += "\n"
-    
+
 # # def read_map_clone(x, y, band=1):
 # #     # compare = compare_clone(x, y)
 # #     x_attr = get_gdal_attributes(x)
@@ -753,7 +771,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     logger.debug('Reading file: ' + str(gdal_file_name))
 #     x = read_GDAL(gdal_file_name)
 #     if cloneMapFileName != None:
-#         y = read_GDAL(cloneMapFileName)        
+#         y = read_GDAL(cloneMapFileName)
 #         x_attr = get_gdal_attributes(x, gdal_file_name)
 #         y_attr = get_gdal_attributes(y, cloneMapFileName)
 #         identical = compare_maps(x_attr, y_attr)
@@ -769,18 +787,18 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #                     varName,
 #                     dateInput,
 #                     isOneDimensional = False,
-#                     useDoy = None,                    
+#                     useDoy = None,
 #                     cloneMapFileName = None,
 #                     cloneMapAttributes = None,
 #                     LatitudeLongitude = True,
 #                     specificFillValue = None):
-    
+
 #     if isOneDimensional:
 #         arr = netcdf_to_array_1d(
 #             ncFile,
 #             varName,
 #             dateInput,
-#             useDoy,                    
+#             useDoy,
 #             cloneMapFileName,
 #             cloneMapAttributes,
 #             LatitudeLongitude,
@@ -791,24 +809,24 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #             ncFile,
 #             varName,
 #             dateInput,
-#             useDoy,                    
+#             useDoy,
 #             cloneMapFileName,
 #             cloneMapAttributes,
 #             LatitudeLongitude,
 #             specificFillValue
 #         )
-        
+
 #     return arr
-            
+
 # def netcdf_to_array_2d(ncFile,
 #                        varName,
 #                        dateInput,
-#                        useDoy,                    
+#                        useDoy,
 #                        cloneMapFileName,
 #                        cloneMapAttributes,
 #                        LatitudeLongitude,
 #                        specificFillValue):
-    
+
 #     logger.debug('Reading variable: ' + str(varName) + ' from the file: ' + str(ncFile))
 #     f = read_netCDF(ncFile)
 #     varName = str(varName)
@@ -827,7 +845,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 # def netcdf_to_array_1d(ncFile,
 #                        varName,
 #                        dateInput,
-#                        useDoy,                    
+#                        useDoy,
 #                        cloneMapFileName,
 #                        cloneMapAttributes,
 #                        LatitudeLongitude,
@@ -837,7 +855,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     clone_lats = f['lat']
 #     clone_lons = f['lon']
 #     logger.debug('Reading variable: ' + str(varName) + ' from the file: ' + str(ncFile))
-#     f = xr.open_dataset(ncFile)            
+#     f = xr.open_dataset(ncFile)
 #     pass
 
 # def netcdf_to_arrayWithoutTime(
@@ -845,8 +863,8 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #         cloneMapFileName  = None,
 #         LatitudeLongitude = True,
 #         specificFillValue = None,
-#         absolutePath = None):        
-    
+#         absolutePath = None):
+
 #     logger.debug('Reading variable: ' + str(varName) + ' from the file: ' + str(ncFile))
 #     f = read_netCDF(ncFile)
 #     varName = str(varName)
@@ -878,7 +896,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     if endDate <= lastDateInNC:
 #         endIndex = nc.date2index(datetime.datetime(endDate.year, endDate.month, endDate.day, 0, 0, 0), f.variables[t_varname])
 #     else:
-#         endIndex = f.variables[t_varname].size        
+#         endIndex = f.variables[t_varname].size
 #     timeIndex = np.arange(startIndex, endIndex)
 #     arr = resample_nc_data(f, varName, cloneMapFileName, t_dimname, timeIndex)
 #     f = None
@@ -895,7 +913,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     lookup = set()  # a temporary lookup set
 #     filenamelist = [x for x in filenamelist if x not in lookup and lookup.add(x) is None]
 #     return filenamelist
-    
+
 # def netcdf_time_slice_to_array(ncFileUnformatted,
 #                                varName,
 #                                startDate,
@@ -912,7 +930,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 
 #     # loop though netcdf files
 #     arr_list = []
-#     for ncFile in ncFileList:        
+#     for ncFile in ncFileList:
 #         logger.debug('reading variable: ' + str(varName) + ' from the file: ' + str(ncFile))
 #         f = read_netCDF(ncFile)
 #         varName = str(varName)
@@ -937,16 +955,16 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #         else:
 #             endIndex = f.variables[t_varname].size
 #             endIndex -= 1       # account for zero indexing
-        
+
 #         timeIndex = np.arange(startIndex, endIndex + 1)
 #         arr = resample_nc_data(f, varName, cloneMapFileName, t_dimname, timeIndex)
 #         arr_list.append(arr)
 #         f = None
-        
+
 #     arr = np.concatenate(arr_list, axis=0)
 #     return arr
-        
-# # def compare_clone(inputMapFileName,cloneMapFileName):    
+
+# # def compare_clone(inputMapFileName,cloneMapFileName):
 # #     input_attributes = get_map_attributes(inputMapFileName)
 # #     clone_attributes = get_map_attributes(cloneMapFileName)
 # #     same_clone = True
@@ -954,7 +972,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 # #     if input_attributes['rows'] != clone_attributes['rows']: same_clone = False
 # #     if input_attributes['cols'] != clone_attributes['cols']: same_clone = False
 # #     if input_attributes['xUL'] != clone_attributes['xUL']: same_clone = False
-# #     if input_attributes['yUL'] != clone_attributes['yUL']: same_clone = False    
+# #     if input_attributes['yUL'] != clone_attributes['yUL']: same_clone = False
 # #     return same_clone
 
 # def compare_maps(x_attr, y_attr):
@@ -963,7 +981,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #     if x_attr['rows'] != y_attr['rows']: identical = False
 #     if x_attr['cols'] != y_attr['cols']: identical = False
 #     if x_attr['xUL'] != y_attr['xUL']: identical = False
-#     if x_attr['yUL'] != y_attr['yUL']: identical = False    
+#     if x_attr['yUL'] != y_attr['yUL']: identical = False
 #     return identical
 
 # # def compare_netcdf_with_gdal(nc_file_name, gdal_file_name):
@@ -992,9 +1010,9 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #         nrows = gdal_file.y.size
 #         ncols = gdal_file.x.size
 #         x_upper_left = gdal_file.transform[2]
-#         y_upper_left = gdal_file.transform[5]    
+#         y_upper_left = gdal_file.transform[5]
 #         # if arc_degree == True:
-#         #     cellsize = round(cellsize * 360000.)/360000.    
+#         #     cellsize = round(cellsize * 360000.)/360000.
 #         map_attributes = {
 #             'cellsize' : float(cellsize),
 #             'rows'     : float(nrows),
@@ -1003,7 +1021,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 #             'yUL'      : float(y_upper_left)
 #         }
 #         attr_cache[gdal_file_name] = map_attributes
-        
+
 #     return map_attributes
 
 # def get_gdal_extent(gdal_file, gdal_file_name):
@@ -1051,9 +1069,9 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 # #     nrows = ds.y.size
 # #     ncols = ds.x.size
 # #     x_upper_left = ds.transform[2]
-# #     y_upper_left = ds.transform[5]    
+# #     y_upper_left = ds.transform[5]
 # #     if arc_degree == True:
-# #         cellsize = round(cellsize * 360000.)/360000.    
+# #         cellsize = round(cellsize * 360000.)/360000.
 # #     map_attributes = {
 # #         'cellsize' : float(cellsize),
 # #         'rows'     : float(nrows),
@@ -1071,7 +1089,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 
 # def regrid_data_to_finer_grid(factor, coarse, missing_value):
 #     # TODO: check with >3 dimensions (only checked with 2D
-#     # and 3D arrays so far)    
+#     # and 3D arrays so far)
 #     if factor == 1: return coarse
 #     dim = np.shape(coarse)
 #     ndim = len(dim)
@@ -1097,7 +1115,7 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 
 #     return fine
 
-# def repair_time_string(timestr):    
+# def repair_time_string(timestr):
 #     timestr = timestr.lower()
 #     timestr_split = timestr.split()
 #     units = timestr_split[0]
@@ -1120,20 +1138,20 @@ def check_format_args_ok(format_args, allowable_args, allow_duplicates=True):
 
 #     if not successful:
 #         raise ValueError(msg)
-    
+
 #     return timestr
-            
-# def findLastYearInNCTime(ncTimeVariable):    
+
+# def findLastYearInNCTime(ncTimeVariable):
 #     last_datetime = nc.num2date(
 #         ncTimeVariable[len(ncTimeVariable) - 1],
 #         repair_time_string(ncTimeVariable.units),
 #         # ncTimeVariable.units,
-#         ncTimeVariable.calendar) 
+#         ncTimeVariable.calendar)
 #     return last_datetime.year
 
 # def findFirstYearInNCTime(ncTimeVariable):
 #     first_datetime = nc.num2date(
 #         ncTimeVariable[0],
 #         repair_time_string(ncTimeVariable.units),
-#         ncTimeVariable.calendar)    
+#         ncTimeVariable.calendar)
 #     return first_datetime.year

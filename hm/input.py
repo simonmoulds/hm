@@ -31,13 +31,16 @@ class HmInputData(object):
             self.model.domain
         )
         
-    def update(self):
+    def update(self, method):
         vars(self.model)[self.model_varname].select(
-            time=self.model.time.curr_time, method='nearest'
+            time=self.model.time.curr_time, method=method
         )
+        # vars(self.model)[self.model_varname].select(
+        #     time=self.model.time.curr_time, method='nearest'
+        # )
         
-    def dynamic(self):
-        self.update()
+    def dynamic(self, method='nearest'):
+        self.update(method)
         
 class HmSpaceInputData(object):
     def dynamic(self):
