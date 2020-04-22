@@ -15,11 +15,13 @@ from .modeltime import ModelTime
 from .constants import *
 from .utils import *
 
+
 def set_modeltime(starttime, endtime, timedelta):
-    return ModelTime(starttime, endtime, timedelta)    
+    return ModelTime(starttime, endtime, timedelta)
 
 # See the following answer to compute area from lat/long grid:
 # https://gis.stackexchange.com/a/232996
+
 
 def set_domain(
         filename_or_obj,
@@ -31,27 +33,26 @@ def set_domain(
         z_coords=None,
         pseudo_coords=None,
         **kwargs):
-    
     """Open data array which defines the model domain.
-    
+
     Parameters
     ----------
-    filename_or_obj : str 
+    filename_or_obj : str
         String or object which is passed to xarray
     modeltime : HmModelTime
         Object containing the model time
     mask_varname : str, optional
         String specifying the name of the variable which defines
         the model domain
-    area_varname : str, optional 
+    area_varname : str, optional
         String specifying the name of the variable which defines
-        the model domain. If provided and `filename_or_obj` 
-        represents a netCDF file, the program searches for the 
-        variable in the file, raising an error if it isn't found. 
-        If not provided, or if `filename_or_obj` is a GDAL raster 
-        file, it is assumed that the values in the mask represent 
-        the grid cell area. Note that not all models require the 
-        cell area; in these cases it is perfectly fine to use 
+        the model domain. If provided and `filename_or_obj`
+        represents a netCDF file, the program searches for the
+        variable in the file, raising an error if it isn't found.
+        If not provided, or if `filename_or_obj` is a GDAL raster
+        file, it is assumed that the values in the mask represent
+        the grid cell area. Note that not all models require the
+        cell area; in these cases it is perfectly fine to use
         an arbitrary value (e.g. 1)
     is_1d : bool, optional
         Whether space is represented as a 2-dimensional
@@ -59,31 +60,31 @@ def set_domain(
     xy_dimname : str, optional
         If `is_1d = True`, then `xy_dimname` is the name of the
         space dimension in `filename_or_obj`
-    pseudo_coords : dict 
+    pseudo_coords : dict
         Pseudo coordinates are defined as coordinates which are
-        typically used in hydrological models to represent 
-        sub-grid variables (e.g. land use/land cover types), 
+        typically used in hydrological models to represent
+        sub-grid variables (e.g. land use/land cover types),
         but may be used for other purposes (e.g. ensemble
-        simulations). The dictionary keys should match the 
+        simulations). The dictionary keys should match the
         name of the corresponding dimension in any input netCDF
         file, as well as the name used in the `variable_list`
         module for model implementations build on the `hm`
         infrastructure. Dictionary values should be a
-        1-dimensional numpy array with the value of each 
+        1-dimensional numpy array with the value of each
         coordinate (typically a sequence of integers)
-    **kwargs : any 
+    **kwargs : any
         Keyword arguments passed to `xarray.open_dataset()`
-    
+
     Returns
     -------
     domain : HmDomain
-        The newly created model domain.    
+        The newly created model domain.
     """
     if is_1d & (xy_dimname is None):
         raise ValueError(
             'If domain dataset is one dimensional then the '
             'name of the space dimension must be specified.'
-        )    
+        )
     try:
         ds = xr.open_dataset(filename_or_obj, **kwargs)
         if is_temporal(ds):
@@ -93,9 +94,9 @@ def set_domain(
                 'discarding the rest.'
             )
             t_dimname = [nm for nm in allowed_t_dim_names if nm in ds.dims][0]
-            ds = ds.isel({t_dimname : 0})
-        
-        if mask_varname is not None:            
+            ds = ds.isel({t_dimname: 0})
+
+        if mask_varname is not None:
             try:
                 mask = ds[mask_varname]
             except KeyError:
@@ -104,7 +105,7 @@ def set_domain(
                     + filename_or_obj
                     + ' does not contain variable '
                     + varname
-                    )
+                )
 
         else:
             if len(ds.data_vars) != 1:
@@ -116,8 +117,8 @@ def set_domain(
                 )
             else:
                 mask = xr.open_dataarray(filename_or_obj, **kwargs)
-                
-        mask.name = 'mask'        
+
+        mask.name = 'mask'
         if area_varname is not None:
             try:
                 area = ds[area_varname]
@@ -127,13 +128,13 @@ def set_domain(
                     + filename_or_obj
                     + ' does not contain variable '
                     + varname
-                    )            
+                )
         else:
             # should we include a warning here?
             area = mask.copy()
             area.name = 'area'
             area[:] = 1
-            
+
     except OSError:
         # An OSError would result if filename_or_obj couldn't
         # be opened with xarray.open_dataset(). Next we try to
@@ -146,7 +147,7 @@ def set_domain(
             mask.name = 'mask'
             area = mask.copy()
             area.name = 'area'
-            
+
         except:
             raise OSError(
                 'File ' + filename_or_obj + ' cannot be opened'
@@ -156,10 +157,10 @@ def set_domain(
     # dimensions and pseudo-dimensions
     dims = get_xr_dimension_names(mask, is_1d, xy_dimname)
     coords = get_xr_coordinates(mask, dims)
-    rename_dict = {value:key for key,value in dims.items()}
+    rename_dict = {value: key for key, value in dims.items()}
     mask = mask.astype(bool).rename(rename_dict)
     area = area.rename(rename_dict)
-    coords.update({'time' : modeltime.times})
+    coords.update({'time': modeltime.times})
 
     # join z, pseudo coordinates
     if z_coords is None:
@@ -171,10 +172,11 @@ def set_domain(
         all_coords = {**z_coords, **pseudo_coords, **coords}
         # all_coords = {**pseudo_coords, **coords}
     except:
-        all_coords = coords        
+        all_coords = coords
     ds = xr.merge([xr.Dataset(all_coords), mask, area])
     return HmDomain(ds, is_1d=is_1d, xy_dimname='xy')
-    
+
+
 def _get_files_covering_time_period(filename_or_obj, domain):
     # assume that no more than one file per day is used - is this reasonable?
     datelist = pd.date_range(
@@ -182,37 +184,44 @@ def _get_files_covering_time_period(filename_or_obj, domain):
         domain.endtime.date(),
         freq='D'
     ).to_pydatetime().tolist()
-    filename_list= []
+    filename_list = []
     for date in datelist:
-        f = filename_or_obj.format(day=date.day, month=date.month, year=date.year)
+        f = filename_or_obj.format(
+            day=date.day, month=date.month, year=date.year)
         filename_list.append(f)
     # https://stackoverflow.com/a/44628266
     lookup = set()  # a temporary lookup set
-    filename_list = [x for x in filename_list if x not in lookup and lookup.add(x) is None]
+    filename_list = [
+        x for x in filename_list if x not in lookup and lookup.add(x) is None]
     return filename_list
 
+
 def _has_format_args(x):
-    format_args = [tup[1] for tup in string.Formatter().parse(x) if tup[1] is not None]
+    format_args = [tup[1]
+                   for tup in string.Formatter().parse(x) if tup[1] is not None]
     return len(format_args) > 0
+
 
 def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
     if _has_format_args(filename_or_obj):
-        filename_list = _get_files_covering_time_period(filename_or_obj, domain)
+        filename_list = _get_files_covering_time_period(
+            filename_or_obj, domain)
     else:
         filename_list = [filename_or_obj]
     kwargs['combine'] = 'by_coords'
     try:
-        ds = xr.open_mfdataset(filename_list, **kwargs)        
+        ds = xr.open_mfdataset(filename_list, **kwargs)
     except ValueError:
         # A ValueError arises when xarray cannot properly
         # decode the times in the dataset (this happens
         # with WFDEI data, for instance). In this case we
         # have to decode the times manually.
-        kwargs['decode_times'] = False        
+        kwargs['decode_times'] = False
         ds = xr.open_mfdataset(filename_list, **kwargs)
-        # does the dataset have a variable which is interpretable as time?            
+        # does the dataset have a variable which is interpretable as time?
         timedim = [dim for dim in ds.dims if dim in allowed_t_dim_names][0]
-        timevars = [var for var in ds.variables.keys() if var in allowed_t_dim_names and var not in timedim]
+        timevars = [var for var in ds.variables.keys(
+        ) if var in allowed_t_dim_names and var not in timedim]
         if len(timevars) == 1:
             timevar = timevars[0]
             time = ds[timevar]
@@ -220,14 +229,16 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
                 nc.num2date(time.values, time.units),
                 dtype='datetime64'
             )
-            ds.update(xr.Dataset({timedim : timenum}))
+            ds.update(xr.Dataset({timedim: timenum}))
         else:
             raise ValueError
     return ds
 
+
 def _open_netcdf_dataset(filename_or_obj, domain, **kwargs):
     if _has_format_args(filename_or_obj):
-        filename_list = _get_files_covering_time_period(filename_or_obj, domain)
+        filename_list = _get_files_covering_time_period(
+            filename_or_obj, domain)
     else:
         filename_list = [filename_or_obj]
     # MFDataset results in ValueError:
@@ -236,13 +247,15 @@ def _open_netcdf_dataset(filename_or_obj, domain, **kwargs):
     # necessary functionality ourselves
     # ds = nc.MFDataset(filename_list, 'r')
     # N.B. netCDF4 is more robust compared to xarray
-    # when it comes to interpreting time 
+    # when it comes to interpreting time
     ds = [nc.Dataset(f, 'r') for f in filename_list]
     return ds
+
 
 def load_hmdataarray(filename_or_obj, **kwargs):
     with open_hmdataarray(filename_or_obj, **kwargs) as da:
         return da.load()
+
 
 def open_hmdataarray(
         filename_or_obj,
@@ -258,11 +271,11 @@ def open_hmdataarray(
 
     Parameters
     ----------
-    filename_or_obj : str 
+    filename_or_obj : str
         String or object which is passed to xarray
-    variable : str 
+    variable : str
         The name of the variable to read
-    domain : HmDomain 
+    domain : HmDomain
         The spatio-temporal model domain
     is_1d : bool, optional
         Whether space is represented as a 2-dimensional
@@ -285,8 +298,18 @@ def open_hmdataarray(
     --------
     TODO
     """
-    ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)    
-    da = ds[variable]
+    try:
+        ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)
+        da = ds[variable]
+        has_data = True
+    except OSError:
+        da = xr.DataArray(
+            data=np.full(domain._data['area'].shape, np.nan),
+            dims=domain._data['area'].dims,
+            coords=domain._data['area'].coords
+        )
+        has_data = False
+
     dims = get_xr_dimension_names(da, is_1d, xy_dimname)
     coords = get_xr_coordinates(da, dims)
     if is_1d & (xy_dimname not in da.dims):
@@ -303,58 +326,62 @@ def open_hmdataarray(
     #         'DataArray object has dimensions which are not specified in '
     #         'the model domain: ' + ', '.join(missing_dims)
     #     )
-    
+
     temporal = is_temporal(da)
     spatial = is_spatial(da, is_1d, xy_dimname)
     if spatial:
         data_is_1d = 'xy' in dims.keys()
-        data_is_2d = all(dim in dims.keys() for dim in ('x','y'))
+        data_is_2d = all(dim in dims.keys() for dim in ('x', 'y'))
         if data_is_1d:
             if domain.is_2d:
                 raise ValueError(
                     'DataArray object is one-dimensional but model domain is '
                     'two-dimensional.'
                 )
-            
+
             all_xy = all(xy in coords.xy for xy in domain.coords['xy'])
             if not all_xy:
                 raise ValueError(
                     'One-dimensional DataArray does not contain all model '
                     'domain points'
-                    )
-            
+                )
+
         elif data_is_2d:
             if domain.is_1d:
                 raise ValueError(
                     'DataArray object is two-dimensional but model domain is '
                     'one-dimensional.'
                 )
-                        
+
             domain_ext = get_spatial_extent(domain.coords)
             data_ext = get_spatial_extent(coords)
-            domain_in_data = \
-                (data_ext.left <= domain_ext.left) \
+            domain_in_data = (data_ext.left <= domain_ext.left) \
                 & (data_ext.right >= domain_ext.right) \
                 & (data_ext.bottom <= domain_ext.bottom) \
                 & (data_ext.top >= domain_ext.top)
             if not domain_in_data:
                 raise ValueError(
                     'DataArray does not entirely contain model domain: '
-                    'Domain extent is ' + str(tuple(domain_ext.values())) + '(left, right, top, bottom)'
-                    'Data extent is ' + str(tuple(data_ext.values())) + '(left, right, top, bottom)'
+                    'Domain extent is ' +
+                    str(tuple(domain_ext.values())) +
+                    '(left, right, top, bottom)'
+                    'Data extent is ' +
+                    str(tuple(data_ext.values())) +
+                    '(left, right, top, bottom)'
                 )
     if temporal:
         # Check the data covers the time domain
         data_starttime = pd.Timestamp(da.coords[dims.time].values[0])
         data_endtime = pd.Timestamp(da.coords[dims.time].values[-1])
-        time_domain_in_data = \
-            (data_starttime <= domain.starttime + domain.dt/2) \
+        time_domain_in_data = (data_starttime <= domain.starttime + domain.dt/2) \
             & (data_endtime >= domain.endtime - domain.dt/2)
         if not time_domain_in_data:
             raise ValueError(
                 'DataArray does not entirely contain model time domain: '
-                'Domain temporal extent is: ' + str(domain.starttime) + ' -> ' + str(domain.endtime) + ''\
-                'Data temporal extent is: ' + str(data_starttime) + ' -> ' + str(data_endtime)
+                'Domain temporal extent is: ' +
+                str(domain.starttime) + ' -> ' + str(domain.endtime) + ''
+                'Data temporal extent is: ' +
+                str(data_starttime) + ' -> ' + str(data_endtime)
             )
 
     if temporal:
@@ -368,10 +395,31 @@ def open_hmdataarray(
         # (spatio-)temporal data).
         nc_dataset = _open_netcdf_dataset(filename_or_obj, domain)
         if spatial:
-            hm = HmSpaceTimeDataArray(da, nc_dataset, variable, domain, is_1d, xy_dimname, **kwargs)
+            hm = HmSpaceTimeDataArray(
+                da,
+                nc_dataset,
+                variable,
+                domain,
+                is_1d,
+                xy_dimname,
+                has_data,
+                **kwargs
+            )
         else:
-            hm = HmTimeDataArray(da, nc_dataset, domain, **kwargs)
+            hm = HmTimeDataArray(
+                da,
+                nc_dataset,
+                domain,
+                has_data,
+                **kwargs
+            )
     else:
-        hm = HmSpaceDataArray(da, domain, is_1d, xy_dimname, **kwargs)
+        hm = HmSpaceDataArray(
+            da,
+            domain,
+            is_1d,
+            xy_dimname,
+            has_data,
+            **kwargs)
 
     return hm
