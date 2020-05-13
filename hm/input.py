@@ -13,12 +13,16 @@ class HmInputData(object):
             model,
             filename,
             nc_varname,
-            model_varname
+            model_varname,
+            is_1d=False,
+            xy_dimname=None
     ):
         self.model = model
         self.filename = filename
         self.nc_varname = nc_varname
         self.model_varname = model_varname
+        self.is_1d = is_1d
+        self.xy_dimname = xy_dimname
 
     def initial(self):
         self.read()
@@ -27,7 +31,9 @@ class HmInputData(object):
         vars(self.model)[self.model_varname] = open_hmdataarray(
             self.filename,
             self.nc_varname,
-            self.model.domain
+            self.model.domain,
+            self.is_1d,
+            self.xy_dimname
         )
 
     def update(self, method):

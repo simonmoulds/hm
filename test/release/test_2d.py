@@ -1,7 +1,7 @@
 import datetime
 import hm.api as hm
 import xarray as xr
-import pytest
+# import pytest
 import pandas as pd
 import numpy as np
 
@@ -28,10 +28,13 @@ modeltime = hm.set_modeltime(
 # x = da.select(time=pd.Timestamp(2003,6,4), method='nearest')
 # x = da.select(time=slice(pd.Timestamp(2003,6,4), pd.Timestamp(2003,6,6)))
 
-# def match(x, table):
-#     table_sorted = np.argsort(table)
-#     x_pos = np.searchsorted(table[table_sorted], x)
-#     return table_sorted[x_pos]
+def match(x, table):
+    table_sorted = np.argsort(table)
+    x_pos = np.searchsorted(table[table_sorted], x)
+    # This implements a last observation carried forwards extrapolation
+    max_index = len(table_sorted) - 1
+    x_pos[x_pos > max_index] = max_index
+    return table_sorted[x_pos]
 
 def test_set_domain():
     modeltime = hm.set_modeltime(

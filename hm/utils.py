@@ -130,7 +130,11 @@ def reshape_array(arr, mask):
 def match(x, table):
     # TODO: document
     table_sorted = np.argsort(table)
-    x_pos = np.searchsorted(table[table_sorted], x)
+    x_pos = np.array(np.searchsorted(table[table_sorted], x))
+    # this implements a last observation carried forwards extrapolation
+    max_index = len(table_sorted) - 1
+    x_pos[x_pos > max_index] = max_index
+    # make sure the function always returns an array
     return table_sorted[x_pos]
 
 

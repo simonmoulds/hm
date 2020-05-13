@@ -38,12 +38,12 @@ class HmBaseClass(object):
         dataarray_or_dataset : xarray Dataset or DataArray
         is_1d : bool
             Whether the dataset has a one-dimensional representation
-            of space (i.e. a set of points). This is opposed to a 
-            two-dimensional representation which will have coordinates 
+            of space (i.e. a set of points). This is opposed to a
+            two-dimensional representation which will have coordinates
             to identify the location of each point.
-        xy_dimname : str 
-            If the dataset is one-dimensional, this parameter 
-            specifies the name of the space dimension, which is 
+        xy_dimname : str
+            If the dataset is one-dimensional, this parameter
+            specifies the name of the space dimension, which is
             often non-standard (e.g. 'land').
         """
         self._data = dataarray_or_dataset
@@ -69,15 +69,22 @@ class HmBaseClass(object):
         self._axes = get_xr_dimension_axes(self._data, self._dims)
         self._coords = get_xr_coordinates(self._data, self._dims)
         self._is_1d = ('xy' in self.dims)
-        self._is_2d = (not self._is_1d) & all(
-            dim in self.dims for dim in (self._dims['x'], self._dims['y']))
+        self._is_2d = (
+            (not self._is_1d)
+            & ('x' in self.dims)
+            & ('y' in self.dims)
+        )
+        # self._is_2d = (
+        #     (not self._is_1d)
+        #     & all(dim in self.dims for dim in (self._dims['x'], self._dims['y']))
+        # )
         self._is_spatial = self._is_1d | self._is_2d
         self._spatial_extent()
 
     def _spatial_extent(self):
         """Extract spatial extent from data object.
 
-        Only relevant for two-dimensional datasets; for 
+        Only relevant for two-dimensional datasets; for
         one-dimensional datasets the extent is None.
         """
         if self.is_2d:
@@ -133,7 +140,7 @@ class HmDataset(HmBaseClass):
 class HmDomain(HmDataset):
     """Class to represent a model domain.
 
-    The model domain is the spatial and temporal grid over 
+    The model domain is the spatial and temporal grid over
     which computations are performed.
     """
 
@@ -222,7 +229,7 @@ class HmSpaceDataArray(HmDataArray):
 
         Parameters:
         -----------
-        domain : HmDomain object        
+        domain : HmDomain object
         """
         self._domain = domain
         super().__init__(
@@ -249,11 +256,11 @@ class HmSpaceDataArray(HmDataArray):
         ----------
         skip : list
             TODO
-        method : str 
-            Method to use for inexact matches (see 
+        method : str
+            Method to use for inexact matches (see
             `xarray.Dataset.sel` for more details).
         **kwargs : Any
-            Additional keyword arguments to 
+            Additional keyword arguments to
             `xarray.Dataset.sel`
         """
         self._get_index()
@@ -327,17 +334,17 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         Parameters:
         -----------
         nc_dataset : netCDF4.Dataset
-            The netCDF4.Dataset object, providing a 
-            lower-level interface to the dataset which 
-            returns selected data much faster than comparable 
-            operations in xarray. The trade-off is that only 
-            exact indices can be used. To overcome this, this 
-            hm.HmSpaceTimeDataArray includes a 'ghost' 
+            The netCDF4.Dataset object, providing a
+            lower-level interface to the dataset which
+            returns selected data much faster than comparable
+            operations in xarray. The trade-off is that only
+            exact indices can be used. To overcome this, this
+            hm.HmSpaceTimeDataArray includes a 'ghost'
             xarray.DataArray object which is for (exact and
-            inexact) indexing. The output of 
-            xarray.DataArray.sel is used to find the exact 
-            index in the corresponding netCDF4 object. 
-        variable : str 
+            inexact) indexing. The output of
+            xarray.DataArray.sel is used to find the exact
+            index in the corresponding netCDF4 object.
+        variable : str
             Variable name
         """
         super().__init__(
@@ -356,7 +363,7 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
     def _get_nc_index(self):
         """Map xarray to underlying netCDF4 dataset.
 
-        This is necessary because xarray is rather slow at 
+        This is necessary because xarray is rather slow at
         retrieving data from file.
         """
         nc_slice = [slice(None)] * len(self._dims)
@@ -373,11 +380,11 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         Parameters
         ----------
         time : pandas.Timestamp, slice
-            The time at which data is required. If time is a 
-            slice, the start and stop points must be 
+            The time at which data is required. If time is a
+            slice, the start and stop points must be
             pandas.Timestamp objects.
         **kwargs : Any
-            Additional keyword arguments to 
+            Additional keyword arguments to
             `xarray.Dataset.sel`
         """
         # select time using xarray selection
@@ -389,12 +396,19 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
 
         # index of times in individual netCDF4 files
         time_index = self._nc_coords['_index'][mf_time_index]
+        try:
+            time_index.__len__()
+        except AttributeError:
+            time_index = [time_index]
 
         # index of files over which the time index is spread
         file_index = np.unique(self._nc_coords['_file'][mf_time_index])
         slc = self._nc_index.copy()
         if len(file_index) == 1:
             slc[self._axes['time']] = time_index
+            # print(slc)
+            # print(self._nc_data[file_index[0]
+            #                     ].variables[self._varname][slice(0, 0)])
             values = self._nc_data[file_index[0]].variables[self._varname][slc]
         elif len(file_index) > 1:
             values = []

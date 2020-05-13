@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import math
 import string
-import datetime
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -376,13 +373,20 @@ def open_hmdataarray(
         time_domain_in_data = (data_starttime <= domain.starttime + domain.dt/2) \
             & (data_endtime >= domain.endtime - domain.dt/2)
         if not time_domain_in_data:
-            raise ValueError(
+            warnings.warn(
                 'DataArray does not entirely contain model time domain: '
                 'Domain temporal extent is: ' +
                 str(domain.starttime) + ' -> ' + str(domain.endtime) + ''
                 'Data temporal extent is: ' +
                 str(data_starttime) + ' -> ' + str(data_endtime)
             )
+            # raise ValueError(
+            #     'DataArray does not entirely contain model time domain: '
+            #     'Domain temporal extent is: ' +
+            #     str(domain.starttime) + ' -> ' + str(domain.endtime) + ''
+            #     'Data temporal extent is: ' +
+            #     str(data_starttime) + ' -> ' + str(data_endtime)
+            # )
 
     if temporal:
         # If temporal then we also open the netCDF file
