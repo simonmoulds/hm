@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from configparser import ConfigParser, ExtendedInterpolation
 import os
 import time
 import pandas as pd
 import shutil
 import glob
+import toml
 
 from . import disclaimer
 
@@ -15,20 +15,20 @@ logger = logging.getLogger(__name__)
 
 required_config_sections = []
 
-valid_none_values = ['None', 'NONE', 'none', '']
-valid_true_values = ['1', 'True', 'true', 'TRUE']
-valid_false_values = ['0', 'False', 'false', 'FALSE'] + valid_none_values
+# valid_none_values = ['None', 'NONE', 'none', '']
+# valid_true_values = ['1', 'True', 'true', 'TRUE']
+# valid_false_values = ['0', 'False', 'false', 'FALSE'] + valid_none_values
 
 
-def interpret_string(x):
-    if x in valid_none_values:
-        return None
-    elif x in valid_true_values:
-        return True
-    elif x in valid_false_values:
-        return False
-    else:
-        return x
+# def interpret_string(x):
+#     if x in valid_none_values:
+#         return None
+#     elif x in valid_true_values:
+#         return True
+#     elif x in valid_false_values:
+#         return False
+#     else:
+#         return x
 
 
 class Configuration(object):
@@ -57,23 +57,29 @@ class Configuration(object):
 
     def parse_config_file(self):
         """Parse the configuration file."""
-        config = ConfigParser(interpolation=ExtendedInterpolation())
-        config.optionxform = str
-        config.read(self.config_filename)
-        self.config_sections = config.sections()
+        # config = ConfigParser(interpolation=ExtendedInterpolation())
+        # config.optionxform = str
+        # config.read(self.config_filename)
+        # self.config_sections = config.sections()
+        # for section in self.config_sections:
+        #     vars(self)[section] = {}
+        #     options = config.options(section)
+        #     for option in options:
+        #         val = config.get(section, option)
+        #         self.__getattribute__(section)[option] = val
+        config = toml.load(self.config_filename)
+        self.config_sections = config.keys()
         for section in self.config_sections:
             vars(self)[section] = {}
-            options = config.options(section)
+            options = config[section].keys()
             for option in options:
-                val = config.get(section, option)
-                self.__getattribute__(section)[option] = val
-
+                self.__getattribute__(section)[option] = config[section][option]
+        
     def set_config(self, system_arguments=None):
         self.check_required_options()
         self.assign_default_options()
         self.create_output_directories()
         self.create_coupling_directories()
-        # self.repair_logging_key_names()
         self.initialize_logging("Default", system_arguments)
         self.backup_configuration()
 
@@ -238,10 +244,12 @@ class Configuration(object):
             'xy_dimname': None
         }
         for opt, default_value in default_model_grid_values.items():
-            if opt in self.MODEL_GRID.keys():
-                self.MODEL_GRID[opt] = interpret_string(self.MODEL_GRID[opt])
-            else:
+            if opt not in self.MODEL_GRID.keys():
                 self.MODEL_GRID[opt] = default_value
+            # if opt in self.MODEL_GRID.keys():
+            #     self.MODEL_GRID[opt] = interpret_string(self.MODEL_GRID[opt])
+            # else:
+            #     self.MODEL_GRID[opt] = default_value
 
         # # MODEL_GRID
         # self._default_config_check('MODEL_GRID', ['mask'])

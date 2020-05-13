@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def get_variable_names_for_reporting(config, section, option):
     try:
-        return [str(var.strip()) for var in vars(config)[section][option].split(',')]
+        return vars(config)[section][option]
     except KeyError:
         return []
 
