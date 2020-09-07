@@ -8,9 +8,11 @@ class Model(object):
             config,
             time,
             domain,
+            is_1d,
             init=None,
             **kwargs
     ):
         self.config = config
         self.time = time
         self.domain = domain
+        self.is_1d = is_1d

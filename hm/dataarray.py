@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 # https://github.com/cdgriffith/Box/
-
 from box import Box
 from collections import namedtuple, OrderedDict
 
@@ -29,9 +28,10 @@ class HmBaseClass(object):
             dataarray_or_dataset,
             is_1d=False,
             xy_dimname=None,
+            model_is_1d=True,
             has_data=True
     ):
-        """To load data, use the `open_hmdataset` function.
+        """To load data, use the ``open_hmdataset`` function.
 
         Parameters:
         -----------
@@ -55,6 +55,7 @@ class HmBaseClass(object):
             )
         self._is_1d = is_1d
         self._xy_dimname = xy_dimname
+        self._model_is_1d = model_is_1d
         self._has_data = has_data
         self._in_memory = False
         self._update_metadata()
@@ -149,12 +150,31 @@ class HmDomain(HmDataset):
             dataarray_or_dataset,
             is_1d=False,
             xy_dimname=None,
+            model_is_1d=True,
             has_data=True
     ):
+        """
+        Parameters
+        ----------
+        dataarray_or_dataset : xarray Dataset or DataArray
+        is_1d : bool
+            Whether the dataset has a one-dimensional representation
+            of space (i.e. a set of points). This is opposed to a
+            two-dimensional representation which will have coordinates
+            to identify the location of each point.
+        xy_dimname : str
+            If the dataset is one-dimensional, this parameter
+            specifies the name of the space dimension, which is
+            often non-standard (e.g. 'land').
+        has_data : bool
+            Whether or not ``dataarray_or_dataset`` contains
+            data.
+        """
         super().__init__(
             dataarray_or_dataset,
             is_1d,
             xy_dimname,
+            model_is_1d,
             has_data
         )
         if self._is_2d:
@@ -162,7 +182,6 @@ class HmDomain(HmDataset):
 
     @property
     def is_latlon(self):
-        # TODO
         return True
 
     @property
@@ -222,6 +241,7 @@ class HmSpaceDataArray(HmDataArray):
             domain,
             is_1d=False,
             xy_dimname=None,
+            model_is_1d=True,
             has_data=True,
             **kwargs
     ):
@@ -229,17 +249,21 @@ class HmSpaceDataArray(HmDataArray):
 
         Parameters:
         -----------
+        dataarray : xarray.DataArray
         domain : HmDomain object
+        is_1d : bool 
+        xy_dimname : str
+        has_data : bool
         """
         self._domain = domain
         super().__init__(
             dataarray,
             is_1d,
             xy_dimname,
+            model_is_1d,
             has_data
         )
         self.subset(**kwargs)
-    #     self.select()
 
     def interp(self, **kwargs):
         self._data = self._data.interp(**kwargs)
@@ -255,25 +279,21 @@ class HmSpaceDataArray(HmDataArray):
         Parameters
         ----------
         skip : list
-            TODO
+            List of dimension names to skip when performing subset.
         method : str
             Method to use for inexact matches (see
-            `xarray.Dataset.sel` for more details).
+            ``xarray.Dataset.sel`` for more details).
         **kwargs : Any
             Additional keyword arguments to
             `xarray.Dataset.sel`
         """
         self._get_index()
-        # THIS IS A HACK - NEED TO SORT OUT AND TEST!!!
         skip.append('time')
         index = {k: v for k, v in self.index.items() if k not in skip}
-        # index = {k:v for k,v in self.index.items() if k!='time'}
         if all([dim in self._data.coords for dim in self.index]):
             self._data = self._data.sel(index, method=method, **kwargs)
-            # self._data = self._data.sel(self.index, method=method, **kwargs)
         else:
             self._data = self._data.sel(index)
-            # self._data = self._data.sel(self.index)
         self._update_metadata()
 
     def _get_index(self):
@@ -294,7 +314,11 @@ class HmSpaceDataArray(HmDataArray):
     @property
     def values(self):
         # it is a requirement that space dimensions are last - document this (CF Conventions)
-        return self._data.values[..., self._domain.mask.values]
+        # return self._data.values[..., self._domain.mask.values]
+        if self._model_is_1d:
+            return self._data.values[..., self._domain.mask.values]
+        else:
+            return self._data.values
 
 
 class HmSpaceDataset(object):
@@ -304,6 +328,7 @@ class HmSpaceDataset(object):
             domain,
             is_1d=False,
             xy_dimname=None,
+            model_is_1d=True,
             has_data=True
     ):
         self._domain = domain
@@ -311,6 +336,7 @@ class HmSpaceDataset(object):
             dataarray_or_dataset,
             is_1d,
             xy_dimname,
+            model_is_1d,
             has_data
         )
         self.subset()
@@ -327,12 +353,14 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
             domain,
             is_1d=False,
             xy_dimname=None,
+            model_is_1d=True,
             has_data=True
     ):
         """To load data, use the `open_hmdataarray` function.
 
         Parameters:
         -----------
+        dataarray : xarray.DataArray
         nc_dataset : netCDF4.Dataset
             The netCDF4.Dataset object, providing a
             lower-level interface to the dataset which
@@ -346,12 +374,18 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
             index in the corresponding netCDF4 object.
         variable : str
             Variable name
+        domain : HmDomain
+            The model domain.
+        is_1d : bool 
+        xy_dimname : str
+        has_data : bool
         """
         super().__init__(
             dataarray,
             domain,
             is_1d,
             xy_dimname,
+            model_is_1d,
             has_data
         )
         self._varname = variable
@@ -406,9 +440,6 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         slc = self._nc_index.copy()
         if len(file_index) == 1:
             slc[self._axes['time']] = time_index
-            # print(slc)
-            # print(self._nc_data[file_index[0]
-            #                     ].variables[self._varname][slice(0, 0)])
             values = self._nc_data[file_index[0]].variables[self._varname][slc]
         elif len(file_index) > 1:
             values = []
@@ -417,19 +448,16 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
                 values.append(
                     self._nc_data[file_index[i]].variables[self._varname][slc])
             values = np.concatenate(values, axis=self._axis['time'])
-        self._values = values  # [self._domain.mask.values]
+        self._values = values
 
-    # def to_netcdf(self, path, **kwargs):
-    #     # TODO: wrapper to open netcdf file
-    #     try:
-    #         ds = nc.Dataset(path, 'r+')
-    #     except FileNotFoundError:
-    #         ds = nc.Dataset(path, 'w')
-    #     pass
     @property
     def values(self):
-        return self._values[..., self._domain.mask.values]
-
+        # TODO: make a separate property - e.g. values_masked
+        if self._model_is_1d:
+            return self._values[..., self._domain.mask.values]
+        else:
+            return self._values
+            
     @property
     def nc_time(self):
         return self._nc_coords[self._dims['time']]

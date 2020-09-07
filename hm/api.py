@@ -205,7 +205,10 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
             filename_or_obj, domain)
     else:
         filename_list = [filename_or_obj]
-    kwargs['combine'] = 'by_coords'
+
+    if len(filename_list) > 1:
+        kwargs['combine'] = 'by_coords'
+    # kwargs['combine'] = 'by_coords'
     try:
         ds = xr.open_mfdataset(filename_list, **kwargs)
     except ValueError:
@@ -260,6 +263,7 @@ def open_hmdataarray(
         domain,
         is_1d=False,
         xy_dimname=None,
+        model_is_1d=True,
         use_xarray=True,
         xarray_kwargs={},
         **kwargs
@@ -367,14 +371,16 @@ def open_hmdataarray(
                     '(left, right, top, bottom)'
                 )
     if temporal:
-        # Check the data covers the time domain
+        # Check the data covers the time domain        
         data_starttime = pd.Timestamp(da.coords[dims.time].values[0])
         data_endtime = pd.Timestamp(da.coords[dims.time].values[-1])
         time_domain_in_data = (data_starttime <= domain.starttime + domain.dt/2) \
             & (data_endtime >= domain.endtime - domain.dt/2)
-        if not time_domain_in_data:
+        if not time_domain_in_data:            
             warnings.warn(
-                'DataArray does not entirely contain model time domain: '
+                'DataArray from file: ' +
+                filename_or_obj + ' ' +
+                'does not entirely contain model time domain: '
                 'Domain temporal extent is: ' +
                 str(domain.starttime) + ' -> ' + str(domain.endtime) + ''
                 'Data temporal extent is: ' +
@@ -406,6 +412,7 @@ def open_hmdataarray(
                 domain,
                 is_1d,
                 xy_dimname,
+                model_is_1d,
                 has_data,
                 **kwargs
             )
@@ -423,6 +430,7 @@ def open_hmdataarray(
             domain,
             is_1d,
             xy_dimname,
+            model_is_1d,
             has_data,
             **kwargs)
 

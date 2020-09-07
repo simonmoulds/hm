@@ -35,6 +35,7 @@ class Configuration(object):
     def __init__(
             self,
             config_filename,
+            output_directory,
             debug_mode=False,
             system_arguments=None
     ):
@@ -50,6 +51,7 @@ class Configuration(object):
                 + config_filename + ' does not exist'
             )
         self.config_filename = config_filename
+        self.output_directory = output_directory
         self._timestamp = pd.Timestamp.now()
         self._debug_mode = debug_mode
         self.parse_config_file()
@@ -168,39 +170,28 @@ class Configuration(object):
     #     except:
     #         self.landmask = None
     def create_output_directories(self):
-        cleanOutputDir = False
-        if cleanOutputDir:
-            try:
-                shutil.rmtree(self.FILE_PATHS['PathOut'])
-            except:
-                pass
-
         try:
-            os.makedirs(self.FILE_PATHS['PathOut'])
+            os.makedirs(self.output_directory)
         except:
             pass
 
-        # TODO - put this somewhere more logical
-        self.output_directory = self.FILE_PATHS['PathOut']
-        self.output_prefix = ''
-
-        self.tmpDir = os.path.join(self.FILE_PATHS['PathOut'], 'tmp')
+        self.tmpDir = os.path.join(self.output_directory, 'tmp')
         if os.path.exists(self.tmpDir):
             shutil.rmtree(self.tmpDir)
         os.makedirs(self.tmpDir)
 
-        self.outNCDir = os.path.join(self.FILE_PATHS['PathOut'], 'netcdf')
+        self.outNCDir = os.path.join(self.output_directory, 'netcdf')
         if os.path.exists(self.outNCDir):
             shutil.rmtree(self.outNCDir)
         os.makedirs(self.outNCDir)
 
-        self.logFileDir = os.path.join(self.FILE_PATHS['PathOut'], 'log')
+        self.logFileDir = os.path.join(self.output_directory, 'log')
         cleanLogDir = True
         if os.path.exists(self.logFileDir) and cleanLogDir:
             shutil.rmtree(self.logFileDir)
         os.makedirs(self.logFileDir)
 
-        self.endStateDir = os.path.join(self.FILE_PATHS['PathOut'], 'states')
+        self.endStateDir = os.path.join(self.output_directory, 'states')
         if os.path.exists(self.endStateDir):
             shutil.rmtree(self.endStateDir)
         os.makedirs(self.endStateDir)

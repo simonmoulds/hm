@@ -33,7 +33,8 @@ class HmInputData(object):
             self.nc_varname,
             self.model.domain,
             self.is_1d,
-            self.xy_dimname
+            self.xy_dimname,
+            self.model.is_1d
         )
 
     def update(self, method):

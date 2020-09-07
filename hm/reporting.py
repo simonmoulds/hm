@@ -129,13 +129,15 @@ class _netcdf(object):
             model,
             varname,
             filename,
-            variable_list
+            variable_list# ,
+            # transpose = False
     ):
         self.model = model
         self.varname = varname
         self.filename = filename
         self.ncdf = open_netcdf(self.filename, mode='w')
         self.variable_list = variable_list
+        # self.transpose = bool(transpose)
         self.attr = _get_variable_attributes(self.varname, self.variable_list)
         self.add_global_attributes()
         self.add_dimensions()
@@ -288,16 +290,19 @@ class SummaryVariable(object):
             varname,
             variable_list,
             freq,
-            suffix
+            suffix# ,
+            # transpose = False
     ):
         self.model = model
         self.varname = varname
         self.make_filename(suffix)
+        # self.transpose = bool(transpose)
         self._netcdf = _netcdf(
             self.model,
             self.varname,
             self.filename,
-            variable_list
+            variable_list# ,
+            # self.transpose
         )
         self.get_reporting_times(freq=freq)
         self.n_reporting_times = len(self.reporting_times)
@@ -309,11 +314,14 @@ class SummaryVariable(object):
         self.n_timestep = 0
 
     def initial(self):
-        self.data = np.zeros(
-            vars(self.model)[self.varname].shape[:-1] +
-            (self.model.domain.mask.shape),
-            dtype=np.float64
-        )
+        var = vars(self.model)[self.varname]
+        # if self.transpose:
+        #     var = var.T            
+        if self.model.is_1d:            
+            shape = var.shape[:-1]
+        else:
+            shape = var.shape[:-2]
+        self.data = np.zeros(shape + (self.model.domain.mask.shape), dtype=np.float64)
 
     def get_reporting_times(self, **kwargs):
         self.reporting_times = pd.date_range(
@@ -332,7 +340,7 @@ class SummaryVariable(object):
 
     def make_filename(self, suffix):
         self.filename = os.path.join(
-            self.model.config.FILE_PATHS['PathOut'],
+            self.model.config.output_directory,
             'netcdf',
             'hm_output_' + suffix + '_' + self.varname + '.nc'
         )

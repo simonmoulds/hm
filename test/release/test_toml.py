@@ -14,7 +14,7 @@ server = "192.168.1.1"
 ports = [ 8001, 8001, 8002 ]
 connection_max = 5000
 enabled = true
-test = ""
+test = "None"
 
 [servers]
 
