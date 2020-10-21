@@ -176,25 +176,37 @@ class Configuration(object):
             pass
 
         self.tmpDir = os.path.join(self.output_directory, 'tmp')
-        if os.path.exists(self.tmpDir):
-            shutil.rmtree(self.tmpDir)
-        os.makedirs(self.tmpDir)
+        # if os.path.exists(self.tmpDir):
+        #     shutil.rmtree(self.tmpDir)
+        try:
+            os.makedirs(self.tmpDir)
+        except:
+            pass
 
         self.outNCDir = os.path.join(self.output_directory, 'netcdf')
-        if os.path.exists(self.outNCDir):
-            shutil.rmtree(self.outNCDir)
-        os.makedirs(self.outNCDir)
+        # if os.path.exists(self.outNCDir):
+        #     shutil.rmtree(self.outNCDir)
+        try:
+            os.makedirs(self.outNCDir)
+        except:
+            pass
 
         self.logFileDir = os.path.join(self.output_directory, 'log')
         cleanLogDir = True
-        if os.path.exists(self.logFileDir) and cleanLogDir:
-            shutil.rmtree(self.logFileDir)
-        os.makedirs(self.logFileDir)
+        # if os.path.exists(self.logFileDir) and cleanLogDir:
+        #     shutil.rmtree(self.logFileDir)
+        try:
+            os.makedirs(self.logFileDir)
+        except:
+            pass
 
         self.endStateDir = os.path.join(self.output_directory, 'states')
-        if os.path.exists(self.endStateDir):
-            shutil.rmtree(self.endStateDir)
-        os.makedirs(self.endStateDir)
+        # if os.path.exists(self.endStateDir):
+        #     shutil.rmtree(self.endStateDir)
+        try:
+            os.makedirs(self.endStateDir)
+        except:
+            pass
 
     def create_coupling_directories(self):
         pass

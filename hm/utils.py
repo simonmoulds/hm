@@ -198,6 +198,7 @@ def get_xr_dimension_names(dataset_or_dataarray, is_1d=False, xy_dimname=None):
             dimnames['time'] = dim
         else:
             dimnames[dim] = dim
+
     return Box(dimnames, frozen_box=True)
 
 
@@ -216,7 +217,6 @@ def get_xr_coordinates(dataset_or_dataarray, dimnames):
         if dimname is not None:
             coords[dim] = dataset_or_dataarray[dimname].values
     return Box(coords, frozen_box=False)
-    # return Box(coords, frozen_box=True)
 
 
 def decode_nc_times(timevar):

@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import warnings
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 from .dataarray import HmDomain, HmDataArray, HmSpaceDataArray, HmSpaceTimeDataArray
 from .modeltime import ModelTime
 from .constants import *
@@ -19,6 +21,11 @@ def set_modeltime(starttime, endtime, timedelta):
 # See the following answer to compute area from lat/long grid:
 # https://gis.stackexchange.com/a/232996
 
+
+class InputError(Exception):
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
 
 def set_domain(
         filename_or_obj,
@@ -132,11 +139,32 @@ def set_domain(
             area.name = 'area'
             area[:] = 1
 
+        dims = get_xr_dimension_names(mask, is_1d, xy_dimname)
+        coords = get_xr_coordinates(mask, dims)
+
+        # If the model is one-dimensional then the domain must
+        # contain variables which specify the x and y coordinates
+        if is_1d:                                # 1D data has to be specified as netCDF
+            varnames = list(ds.variables.keys())
+            has_x = np.any([nm in allowed_x_dim_names for nm in varnames])
+            has_y = np.any([nm in allowed_y_dim_names for nm in varnames])
+            if not (has_x & has_y):
+                raise InputError('Input netCDF must have spatial information')            
+            xnm = [nm for nm in varnames if nm in allowed_x_dim_names]
+            ynm = [nm for nm in varnames if nm in allowed_y_dim_names]
+            if (len(xnm) > 1) | (len(ynm) > 1):
+                raise InputError('One-dimensional netCDF must have unambiguous variable names for x and y coordinates')
+            # Update coords with x and y coordinates
+            coords.update(
+                {'x' : ds.variables[xnm[0]].values,
+                 'y' : ds.variables[ynm[0]].values}
+            )            
+                 
     except OSError:
         # An OSError would result if filename_or_obj couldn't
         # be opened with xarray.open_dataset(). Next we try to
         # to open the dataset xarray.open_rasterio(), for the
-        # case wheree filename_or_obj is a GDAL dataset
+        # case wheree filename_or_obj is a GDAL dataset (must be 2d)
         try:
             mask = xr.open_rasterio(filename_or_obj, **kwargs)
             if 'band' in mask.dims:
@@ -150,15 +178,16 @@ def set_domain(
                 'File ' + filename_or_obj + ' cannot be opened'
             )
 
+        dims = get_xr_dimension_names(mask, is_1d, xy_dimname)
+        coords = get_xr_coordinates(mask, dims)  # separate 1d/2d methods?
+                
     # now we construct an xarray.Dataset to represent the
     # dimensions and pseudo-dimensions
-    dims = get_xr_dimension_names(mask, is_1d, xy_dimname)
-    coords = get_xr_coordinates(mask, dims)
     rename_dict = {value: key for key, value in dims.items()}
     mask = mask.astype(bool).rename(rename_dict)
     area = area.rename(rename_dict)
     coords.update({'time': modeltime.times})
-
+    
     # join z, pseudo coordinates
     if z_coords is None:
         z_coords = {}
@@ -208,7 +237,6 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
 
     if len(filename_list) > 1:
         kwargs['combine'] = 'by_coords'
-    # kwargs['combine'] = 'by_coords'
     try:
         ds = xr.open_mfdataset(filename_list, **kwargs)
     except ValueError:
@@ -255,8 +283,7 @@ def _open_netcdf_dataset(filename_or_obj, domain, **kwargs):
 def load_hmdataarray(filename_or_obj, **kwargs):
     with open_hmdataarray(filename_or_obj, **kwargs) as da:
         return da.load()
-
-
+        
 def open_hmdataarray(
         filename_or_obj,
         variable,
@@ -299,17 +326,22 @@ def open_hmdataarray(
     --------
     TODO
     """
-    try:
-        ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)
-        da = ds[variable]
-        has_data = True
-    except OSError:
-        da = xr.DataArray(
-            data=np.full(domain._data['area'].shape, np.nan),
-            dims=domain._data['area'].dims,
-            coords=domain._data['area'].coords
-        )
-        has_data = False
+
+    # TODO: test whether this is OK:
+    ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)
+    da = ds[variable]
+    has_data = True
+    # try:
+    #     ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)
+    #     da = ds[variable]
+    #     has_data = True
+    # except OSError:
+    #     da = xr.DataArray(
+    #         data=np.full(domain._data['area'].shape, np.nan),
+    #         dims=domain._data['area'].dims,
+    #         coords=domain._data['area'].coords
+    #     )
+    #     has_data = False
 
     dims = get_xr_dimension_names(da, is_1d, xy_dimname)
     coords = get_xr_coordinates(da, dims)
@@ -370,13 +402,17 @@ def open_hmdataarray(
                     str(tuple(data_ext.values())) +
                     '(left, right, top, bottom)'
                 )
+
+    else:
+        raise InputError('Input netCDF must have spatial information')
+    
     if temporal:
-        # Check the data covers the time domain        
+        # Check the data covers the time domain
         data_starttime = pd.Timestamp(da.coords[dims.time].values[0])
         data_endtime = pd.Timestamp(da.coords[dims.time].values[-1])
         time_domain_in_data = (data_starttime <= domain.starttime + domain.dt/2) \
             & (data_endtime >= domain.endtime - domain.dt/2)
-        if not time_domain_in_data:            
+        if not time_domain_in_data:
             warnings.warn(
                 'DataArray from file: ' +
                 filename_or_obj + ' ' +
@@ -404,26 +440,26 @@ def open_hmdataarray(
         # considerable when accessed multiple times (i.e.
         # (spatio-)temporal data).
         nc_dataset = _open_netcdf_dataset(filename_or_obj, domain)
-        if spatial:
-            hm = HmSpaceTimeDataArray(
-                da,
-                nc_dataset,
-                variable,
-                domain,
-                is_1d,
-                xy_dimname,
-                model_is_1d,
-                has_data,
-                **kwargs
-            )
-        else:
-            hm = HmTimeDataArray(
-                da,
-                nc_dataset,
-                domain,
-                has_data,
-                **kwargs
-            )
+        # if spatial:
+        hm = HmSpaceTimeDataArray(
+            da,
+            nc_dataset,
+            variable,
+            domain,
+            is_1d,
+            xy_dimname,
+            model_is_1d,
+            has_data,
+            **kwargs
+        )
+        # else:            
+        #     hm = HmTimeDataArray(
+        #         da,
+        #         nc_dataset,
+        #         domain,
+        #         has_data,
+        #         **kwargs
+        #     )
     else:
         hm = HmSpaceDataArray(
             da,
@@ -433,5 +469,4 @@ def open_hmdataarray(
             model_is_1d,
             has_data,
             **kwargs)
-
     return hm

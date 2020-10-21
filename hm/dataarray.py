@@ -457,7 +457,7 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
             return self._values[..., self._domain.mask.values]
         else:
             return self._values
-            
+
     @property
     def nc_time(self):
         return self._nc_coords[self._dims['time']]

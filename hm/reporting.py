@@ -14,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 def get_variable_names_for_reporting(config, section, option):
     try:
-        return vars(config)[section][option]
+        # return vars(config)[section][option]
+        varnames = vars(config)[section][option]
+        if type(varnames) is list:
+            return varnames
+        else:
+            return [varnames]
     except KeyError:
         return []
 
@@ -28,6 +33,7 @@ def _get_reporting_variables(config, section):
         all_vars += var_names
     # all_vars = sorted(set(all_vars))
     # var_dict['all'] = all_vars
+    # print(var_dict)
     return box.Box(var_dict, frozen_box=True)
 
 
@@ -129,7 +135,7 @@ class _netcdf(object):
             model,
             varname,
             filename,
-            variable_list# ,
+            variable_list  # ,
             # transpose = False
     ):
         self.model = model
@@ -139,10 +145,16 @@ class _netcdf(object):
         self.variable_list = variable_list
         # self.transpose = bool(transpose)
         self.attr = _get_variable_attributes(self.varname, self.variable_list)
+        if self.model.domain.is_1d:
+            self.attr.dimensions = self.attr.dimensions + ('space',)
+        else:
+            self.attr.dimensions = self.attr.dimensions + ('lat', 'lon')
+        # ensure attr.dimensions are unique
+        self.attr.dimensions = list(dict.fromkeys(self.attr.dimensions))            
         self.add_global_attributes()
         self.add_dimensions()
         self.get_time_axis()
-        self.add_variable()
+        self.add_variable(self.attr)
 
     def add_global_attributes(self):
         try:
@@ -155,18 +167,24 @@ class _netcdf(object):
         """Add dimensions to netCDF object."""
         # TODO: what is the difference between a dimension and coordinate
         # See discussion: https://math.stackexchange.com/questions/3327858/terminology-dimension-vs-coordinate
-        if self.model.domain.is_1d:
-            self.attr.dimensions = self.attr.dimensions + ('space',)
-        else:
-            self.attr.dimensions = self.attr.dimensions + ('lat', 'lon')
 
+        # if self.model.domain.is_1d:
+        #     self.attr.dimensions = self.attr.dimensions + ('space',)
+        # else:
+        #     self.attr.dimensions = self.attr.dimensions + ('lat', 'lon')
+        # # ensure attr.dimensions are unique
+        # self.attr.dimensions = list(dict.fromkeys(self.attr.dimensions))        
         is_temporal = False
         for dim in self.attr.dimensions:
             if dim in allowed_t_dim_names:
                 self.add_time_dimension(dim)
                 is_temporal = True
             else:
-                self.add_nontime_dimension(dim)
+                if self.model.domain.is_1d:
+                    if not (dim in allowed_x_dim_names) | (dim in allowed_y_dim_names):
+                        self.add_nontime_dimension(dim)
+                else:
+                    self.add_nontime_dimension(dim)
 
         # TODO: this doesn't work for 1D outputs, because the dimensions in
         # variable_list include lat/lon
@@ -174,6 +192,15 @@ class _netcdf(object):
         # - Test if 1D or 2D
         # - Test if lat/long
         # - If 1D, we need to write spatial coordinates as variables
+        if self.model.domain.is_1d:
+            for dimname in ['lat','lon']:
+                attr = _get_variable_attributes(dimname, self.variable_list)
+                attr.dimensions = ('space',)
+                self.add_variable(attr)
+                standard_dimname = _get_standard_dimname(dimname)
+                self.ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
+                self.ncdf.sync()
+            
         self.is_temporal = is_temporal
 
     def add_time_dimension(self, dimname, **kwargs):
@@ -211,6 +238,7 @@ class _netcdf(object):
             # (e.g. 1/12 degree)
             kwargs['zlib'] = True
             kwargs['least_significant_digit'] = 16
+            
         var = self.ncdf.createVariable(
             attr.shortname,
             attr.datatype,
@@ -232,24 +260,24 @@ class _netcdf(object):
         else:
             self.time_axis = None
 
-    def add_variable(self, **kwargs):
+    def add_variable(self, attr, **kwargs):
         """Add variable to netCDF file."""
         var = self.ncdf.createVariable(
-            self.attr.shortname,
-            self.attr.datatype,
-            self.attr.dimensions,
+            attr.shortname,
+            attr.datatype,
+            attr.dimensions,
             **kwargs
         )
         try:
-            var.standard_name = self.attr.standard_name
+            var.standard_name = attr.standard_name
         except:
             pass
         try:
-            var.long_name = self.attr.long_name
+            var.long_name = attr.long_name
         except:
             pass
         try:
-            var.units = self.attr.units
+            var.units = attr.units
         except:
             pass
         self.ncdf.sync()
@@ -290,7 +318,7 @@ class SummaryVariable(object):
             varname,
             variable_list,
             freq,
-            suffix# ,
+            suffix  # ,
             # transpose = False
     ):
         self.model = model
@@ -301,7 +329,7 @@ class SummaryVariable(object):
             self.model,
             self.varname,
             self.filename,
-            variable_list# ,
+            variable_list  # ,
             # self.transpose
         )
         self.get_reporting_times(freq=freq)
@@ -316,13 +344,14 @@ class SummaryVariable(object):
     def initial(self):
         var = vars(self.model)[self.varname]
         # if self.transpose:
-        #     var = var.T            
-        if self.model.is_1d:            
+        #     var = var.T
+        if self.model.is_1d:
             shape = var.shape[:-1]
         else:
             shape = var.shape[:-2]
-        self.data = np.zeros(shape + (self.model.domain.mask.shape), dtype=np.float64)
-
+        self.data = np.zeros(
+            shape + (self.model.domain.mask.shape), dtype=np.float64)
+        
     def get_reporting_times(self, **kwargs):
         self.reporting_times = pd.date_range(
             self.model.time.starttime,
@@ -446,7 +475,8 @@ class Reporting(object):
         self.variable_list = variable_list
         self.outdir = self.model.config.output_directory
         self.reporting_variables = _get_reporting_variables(
-            self.model.config, config_section)
+            self.model.config, config_section
+        )
         self.create_summary_variables()
 
     def create_summary_variables(self):

@@ -39,6 +39,9 @@ class ModelTime(object):
         self._times = pd.date_range(starttime, endtime, periods=self._n_timesteps + 1)
         # if show_number_of_timesteps:
         #     logger.info("number of time steps: " + str(self._n_timesteps))
+        self.reset()
+        
+    def reset(self):
         self._curr_time = self._times[0]        
         self._timestep = 0
         self._month_index = 0
