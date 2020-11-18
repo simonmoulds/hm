@@ -25,7 +25,7 @@ class HmDynamicModel(DynamicModel):
             init
         )
         self.model.initial()
-        if config.REPORTING['report'] == 'True':
+        if config.REPORTING['report'] == True:
             self.reporting = Reporting(self.model, variable_list)
         else:
             self.reporting = DummyReporting()
@@ -57,20 +57,26 @@ class HmMonteCarloModel(DynamicModel, MonteCarloModel):
             domain,
             init
         )
-        self.model.initial()
-        if config.REPORTING['report'] == 'True':
-            self.reporting = Reporting(self.model, variable_list)
+        self.model.initial()        
+        self.config = config
+        self.variable_list = variable_list
+
+    def premcloop(self):        
+        if self.config.REPORTING['report'] == True:
+            self.reporting = Reporting(self.model, self.variable_list, self.nrSamples())
         else:
             self.reporting = DummyReporting()
-
-    def initial(self):
-        self.reporting.initial()
+        
+    def initial(self):        
+        self.reporting.initial(self.currentSampleNumber())
 
     def dynamic(self):
         self.model.time.update(self.currentTimeStep())
         self.model.dynamic()
-        self.reporting.dynamic()
+        self.reporting.dynamic(self.currentSampleNumber())
 
+    def postmcloop(self):
+        pass
         
 class HmEnKfModel(DynamicModel, MonteCarloModel, EnKfModel):
     def __init__(

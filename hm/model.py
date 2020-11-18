@@ -16,3 +16,4 @@ class Model(object):
         self.time = time
         self.domain = domain
         self.is_1d = is_1d
+        self.init = init
