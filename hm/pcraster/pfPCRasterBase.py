@@ -23,7 +23,7 @@ class ParticleFilterModel(pfBase.ParticleFilterBase):
       filename = frameworkBase.generateNameT(variableName,
         self.currentTimeStep())
     name = os.path.join(sample, "stateVar", filename)
-    pcraster.report(variable, name)
+    # pcraster.report(variable, name)
 
   def readState(self, variableName):
     """
@@ -36,5 +36,5 @@ class ParticleFilterModel(pfBase.ParticleFilterBase):
       timestep = self.firstTimeStep() - 1
       filename = frameworkBase.generateNameT(variableName, timestep)
     name = os.path.join(sample, "stateVar", filename)
-    return pcraster.readmap(name)
+    # return pcraster.readmap(name)
 

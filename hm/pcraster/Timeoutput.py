@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pcraster
+# import pcraster
 import os
 import re
 from decimal import Decimal
@@ -29,33 +29,34 @@ class TimeoutputTimeseries(object):
     self._sampleValues = None
 
     _idMap = False
-    if isinstance(idMap, str) or isinstance(idMap, pcraster._pcraster.Field):
-      _idMap = True
+    # if isinstance(idMap, str) or isinstance(idMap, pcraster._pcraster.Field):
+    #   _idMap = True
 
     nrRows = self._userModel.nrTimeSteps() - self._userModel.firstTimeStep() + 1
 
     if _idMap:
-      self._spatialId = idMap
-      if isinstance(idMap, str):
-        self._spatialId = pcraster.readmap(idMap)
+      pass
+      # self._spatialId = idMap
+      # # if isinstance(idMap, str):
+      # #   self._spatialId = pcraster.readmap(idMap)
 
-      _allowdDataTypes = [pcraster.Nominal,pcraster.Ordinal,pcraster.Boolean]
-      if self._spatialId.dataType() not in _allowdDataTypes:
-        raise Exception("idMap must be of type Nominal, Ordinal or Boolean")
+      # _allowdDataTypes = [pcraster.Nominal,pcraster.Ordinal,pcraster.Boolean]
+      # if self._spatialId.dataType() not in _allowdDataTypes:
+      #   raise Exception("idMap must be of type Nominal, Ordinal or Boolean")
 
-      if self._spatialId.isSpatial():
-        self._maxId, valid = pcraster.cellvalue(pcraster.mapmaximum(pcraster.ordinal(self._spatialId)), 1)
-      else:
-        self._maxId = 1
+      # if self._spatialId.isSpatial():
+      #   self._maxId, valid = pcraster.cellvalue(pcraster.mapmaximum(pcraster.ordinal(self._spatialId)), 1)
+      # else:
+      #   self._maxId = 1
 
-      # cell indices of the sample locations
-      self._sampleAddresses = []
-      for cellId in range(1, self._maxId + 1):
-        self._sampleAddresses.append(self._getIndex(cellId))
+      # # cell indices of the sample locations
+      # self._sampleAddresses = []
+      # for cellId in range(1, self._maxId + 1):
+      #   self._sampleAddresses.append(self._getIndex(cellId))
 
-      self._spatialIdGiven = True
-      nrCols = self._maxId
-      self._sampleValues = [[Decimal("NaN")]  * nrCols for _ in [0] * nrRows]
+      # self._spatialIdGiven = True
+      # nrCols = self._maxId
+      # self._sampleValues = [[Decimal("NaN")]  * nrCols for _ in [0] * nrRows]
     else:
       self._sampleValues = [[Decimal("NaN")]  * 1 for _ in [0] * nrRows]
 
@@ -63,71 +64,73 @@ class TimeoutputTimeseries(object):
     """
     returns the cell index of a sample location
     """
-    nrCells = pcraster.clone().nrRows() * pcraster.clone().nrCols()
-    found = False
-    cell = 1
+    pass
+    # nrCells = pcraster.clone().nrRows() * pcraster.clone().nrCols()
+    # found = False
+    # cell = 1
 
-    while found == False:
-      if cell > nrCells:
-        raise RuntimeError("Could not find a cell with the index number {}".format(cellId))
+    # while found == False:
+    #   if cell > nrCells:
+    #     raise RuntimeError("Could not find a cell with the index number {}".format(cellId))
 
-      value = pcraster.cellvalue(self._spatialId, cell)
-      if value[0] == cellId and value[1] == True:
-        break
+    #   value = pcraster.cellvalue(self._spatialId, cell)
+    #   if value[0] == cellId and value[1] == True:
+    #     break
 
-      cell += 1
+    #   cell += 1
 
-    return cell
+    # return cell
 
   def sample(self, expression):
     """
     Sampling the current values of 'expression' at the given locations for the current timestep
     """
+    pass
 
-    arrayRowPos = self._userModel.currentTimeStep() - self._userModel.firstTimeStep()
+    # arrayRowPos = self._userModel.currentTimeStep() - self._userModel.firstTimeStep()
 
     #if isinstance(expression, float):
     #  expression = pcraster.scalar(expression)
 
-    try:
-      # store the data type for tss file header
-      if self._spatialDatatype == None:
-        self._spatialDatatype = str(expression.dataType())
-    except AttributeError as e:
-      datatype, sep, tail = str(e).partition(" ")
-      msg = "Argument must be a PCRaster map, type %s given. If necessary use data conversion functions like scalar()" % (datatype)
-      raise AttributeError(msg)
+    # try:
+    #   # store the data type for tss file header
+    #   if self._spatialDatatype == None:
+    #     self._spatialDatatype = str(expression.dataType())
+    # except AttributeError as e:
+    #   datatype, sep, tail = str(e).partition(" ")
+    #   msg = "Argument must be a PCRaster map, type %s given. If necessary use data conversion functions like scalar()" % (datatype)
+    #   raise AttributeError(msg)
 
-    if self._spatialIdGiven:
-      if expression.dataType() == pcraster.Scalar or expression.dataType() == pcraster.Directional:
-        tmp = pcraster.areaaverage(pcraster.spatial(expression), pcraster.spatial(self._spatialId))
-      else:
-        tmp = pcraster.areamajority(pcraster.spatial(expression), pcraster.spatial(self._spatialId))
+    # if self._spatialIdGiven:
+    #   if expression.dataType() == pcraster.Scalar or expression.dataType() == pcraster.Directional:
+    #     tmp = pcraster.areaaverage(pcraster.spatial(expression), pcraster.spatial(self._spatialId))
+    #   else:
+    #     tmp = pcraster.areamajority(pcraster.spatial(expression), pcraster.spatial(self._spatialId))
 
-      col = 0
-      for cellIndex in self._sampleAddresses:
-        value, valid = pcraster.cellvalue(tmp, cellIndex)
-        if not valid:
-          value = Decimal("NaN")
+    #   col = 0
+    #   for cellIndex in self._sampleAddresses:
+    #     value, valid = pcraster.cellvalue(tmp, cellIndex)
+    #     if not valid:
+    #       value = Decimal("NaN")
 
-        self._sampleValues[arrayRowPos][col] = value
-        col += 1
-    else:
-      if expression.dataType() == pcraster.Scalar or expression.dataType() == pcraster.Directional:
-         tmp = pcraster.maptotal(pcraster.spatial(expression))\
-               / pcraster.maptotal(pcraster.scalar(pcraster.defined(pcraster.spatial(expression))))
-      else:
-         tmp = pcraster.mapmaximum(pcraster.maptotal(pcraster.areamajority(pcraster.spatial(expression),\
-               pcraster.spatial(pcraster.nominal(1)))))
+    #     self._sampleValues[arrayRowPos][col] = value
+    #     col += 1
+    # else:
+    #   if expression.dataType() == pcraster.Scalar or expression.dataType() == pcraster.Directional:
+    #      tmp = pcraster.maptotal(pcraster.spatial(expression))\
+    #            / pcraster.maptotal(pcraster.scalar(pcraster.defined(pcraster.spatial(expression))))
+    #   else:
+    #      tmp = pcraster.mapmaximum(pcraster.maptotal(pcraster.areamajority(pcraster.spatial(expression),\
+    #            pcraster.spatial(pcraster.nominal(1)))))
 
-      value, valid = pcraster.cellvalue(tmp, 1)
-      if not valid:
-        value = Decimal("NaN")
+    #   value, valid = pcraster.cellvalue(tmp, 1)
+    #   if not valid:
+    #     value = Decimal("NaN")
 
-      self._sampleValues[arrayRowPos] = value
+    #   self._sampleValues[arrayRowPos] = value
 
-    if self._userModel.currentTimeStep() == self._userModel.nrTimeSteps():
-       self._writeTssFile()
+    # if self._userModel.currentTimeStep() == self._userModel.nrTimeSteps():
+    #    self._writeTssFile()
 
 
   def _writeFileHeader(self, outputFilename):

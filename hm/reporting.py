@@ -496,5 +496,6 @@ class Reporting(object):
             value.initial()
 
     def dynamic(self):
+        print(type(self.model.model))
         for _, value in self.output_variables.items():
             value.update()

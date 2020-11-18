@@ -445,5 +445,5 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
     else:
       newName = generateNameT(name, self._userModel().currentTimeStep())
 
-    import pcraster
-    return pcraster.readmap(newName)
+    # import pcraster
+    # return pcraster.readmap(newName)

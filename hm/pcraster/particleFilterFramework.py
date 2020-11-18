@@ -398,8 +398,8 @@ class ParticleFilterFramework(frameworkBase.FrameworkBase):
       newName = name + ".map"
     else:
       newName = frameworkBase.generateNameT(name, self._userModel().currentTimeStep())
-    import pcraster
-    return pcraster.readmap(newName)
+    # import pcraster
+    # return pcraster.readmap(newName)
 
 
 

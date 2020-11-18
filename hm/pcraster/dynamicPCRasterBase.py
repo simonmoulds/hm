@@ -79,27 +79,27 @@ class DynamicModel(dynamicBase.DynamicBase):
     """
     return self._readmapNew(name)
 
-  # def _setNrTimeSteps(self,
-  #   timeSteps):
-  #   """
-  #   Configure the number of time steps.
+  def _setNrTimeSteps(self,
+    timeSteps):
+    """
+    Configure the number of time steps.
 
-  #   In addition to the setting the number of timesteps we need to pass
-  #   the value to the PCRaster runtime engine.
-  #   """
-  #   dynamicBase.DynamicBase._setNrTimeSteps(self, timeSteps)
+    In addition to the setting the number of timesteps we need to pass
+    the value to the PCRaster runtime engine.
+    """
+    dynamicBase.DynamicBase._setNrTimeSteps(self, timeSteps)
 
-  #   pcr._rte().setNrTimeSteps(timeSteps)
+    # pcr._rte().setNrTimeSteps(timeSteps)
 
-  # def _setCurrentTimeStep(self,
-  #   step):
-  #   """
-  #   Set the current time step.
+  def _setCurrentTimeStep(self,
+    step):
+    """
+    Set the current time step.
 
-  #   In addition to the setting the current timestep within the framework,
-  #   we need to pass the value to the PCRaster runtime engine.
-  #   """
-  #   dynamicBase.DynamicBase._setCurrentTimeStep(self, step)
+    In addition to the setting the current timestep within the framework,
+    we need to pass the value to the PCRaster runtime engine.
+    """
+    dynamicBase.DynamicBase._setCurrentTimeStep(self, step)
 
-  #   pcr._rte().setCurrentTimeStep(step)
+    # pcr._rte().setCurrentTimeStep(step)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import pcraster
+# import pcraster
 from . import frameworkBase
 from . import mcBase
 
@@ -49,5 +49,5 @@ class MonteCarloModel(mcBase.MonteCarloBase):
     else:
       newName = frameworkBase.generateNameT(name, self.currentTimeStep())
 
-    return pcraster.readmap(newName)
+    # return pcraster.readmap(newName)
 

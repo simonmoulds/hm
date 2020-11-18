@@ -438,15 +438,18 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         # index of files over which the time index is spread
         file_index = np.unique(self._nc_coords['_file'][mf_time_index])
         slc = self._nc_index.copy()
+        
+        # 10/2020 - numpy throwing a VisibleDeprecationWarning - 'Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated.'
+        # converting 'slc' to tuple (i.e. 'tuple(slc)') removes this error
         if len(file_index) == 1:
             slc[self._axes['time']] = time_index
-            values = self._nc_data[file_index[0]].variables[self._varname][slc]
+            values = self._nc_data[file_index[0]].variables[self._varname][tuple(slc)]
         elif len(file_index) > 1:
             values = []
             for i in file_index:
                 slc[self._axes['time']] = time_index[file_index == i]
                 values.append(
-                    self._nc_data[file_index[i]].variables[self._varname][slc])
+                    self._nc_data[file_index[i]].variables[self._varname][tuple(slc)])
             values = np.concatenate(values, axis=self._axis['time'])
         self._values = values
 

@@ -248,6 +248,8 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
         ds = xr.open_mfdataset(filename_list, **kwargs)
         # does the dataset have a variable which is interpretable as time?
         timedim = [dim for dim in ds.dims if dim in allowed_t_dim_names][0]
+        # timevars = [var for var in ds.variables.keys(
+        # ) if var in allowed_t_dim_names]# and var not in timedim]
         timevars = [var for var in ds.variables.keys(
         ) if var in allowed_t_dim_names and var not in timedim]
         if len(timevars) == 1:
