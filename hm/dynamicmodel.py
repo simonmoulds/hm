@@ -6,7 +6,7 @@ from .pcraster.dynamicPCRasterBase import DynamicModel
 from .pcraster.mcPCRasterBase import MonteCarloModel
 from .pcraster.kfPCRasterBase import EnKfModel
 
-class HmDynamicModel(DynamicModel):    
+class HmDynamicBase(DynamicModel):
     def __init__(
         self,
         model,
@@ -25,10 +25,27 @@ class HmDynamicModel(DynamicModel):
             init
         )
         self.model.initial()
-        if config.REPORTING['report'] == True:
-            self.reporting = Reporting(self.model, variable_list)
+        self.config = config
+        self.variable_list = variable_list
+
+    def initiate_reporting(self, num_samples=1):
+        if self.config.REPORTING['report'] == True:
+            self.reporting = Reporting(self.model, self.variable_list, num_samples)
         else:
             self.reporting = DummyReporting()
+        
+class HmDynamicModel(HmDynamicBase):
+    def __init__(
+        self,
+        model,
+        config,
+        modeltime,
+        domain,
+        variable_list,
+        init = None
+    ):
+        HmDynamicBase.__init__(self, model, config, modeltime, domain, variable_list, init)
+        self.initiate_reporting()
 
     def initial(self):
         self.reporting.initial()
@@ -37,35 +54,22 @@ class HmDynamicModel(DynamicModel):
         self.model.time.update(self.currentTimeStep())
         self.model.dynamic()
         self.reporting.dynamic()
-
-class HmMonteCarloModel(DynamicModel, MonteCarloModel):
+        
+class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     def __init__(
-            self,
-            model,
-            config,
-            modeltime,
-            domain,
-            variable_list,
-            init = None
+        self,
+        model,
+        config,
+        modeltime,
+        domain,
+        variable_list,
+        init = None
     ):
-        DynamicModel.__init__(self)
+        HmDynamicBase.__init__(self, model, config, modeltime, domain, variable_list, init)
         MonteCarloModel.__init__(self)
-        self.modeltime = modeltime
-        self.model = model(
-            config,
-            modeltime,
-            domain,
-            init
-        )
-        self.model.initial()        
-        self.config = config
-        self.variable_list = variable_list
 
-    def premcloop(self):        
-        if self.config.REPORTING['report'] == True:
-            self.reporting = Reporting(self.model, self.variable_list, self.nrSamples())
-        else:
-            self.reporting = DummyReporting()
+    def premcloop(self):
+        self.initiate_reporting(self.nrSamples())
         
     def initial(self):        
         self.reporting.initial(self.currentSampleNumber())
@@ -78,7 +82,7 @@ class HmMonteCarloModel(DynamicModel, MonteCarloModel):
     def postmcloop(self):
         pass
         
-class HmEnKfModel(DynamicModel, MonteCarloModel, EnKfModel):
+class HmEnKfModel(HmMonteCarloModel, EnKfModel):
     def __init__(
             self,
             model,
@@ -88,22 +92,55 @@ class HmEnKfModel(DynamicModel, MonteCarloModel, EnKfModel):
             variable_list,
             init = None
     ):
-        DynamicModel.__init__(self)
-        MonteCarloModel.__init__(self)
+        HmMonteCarloModel.__init__(self, model, config, modeltime, domain, variable_list, init)
         EnKfModel.__init__(self)
 
-    def premcloop(self):
+    def setState(self):
         pass
+
+    def setObservations(self):
+        pass
+
+    def resume(self):
+        pass
+
+
+
+
+
     
-    def initial(self):
-        pass
+# class HmDynamicModel(DynamicModel):    
+#     def __init__(
+#         self,
+#         model,
+#         config,
+#         modeltime,
+#         domain,
+#         variable_list,
+#         init = None
+#     ):
+#         DynamicModel.__init__(self)
+#         self.modeltime = modeltime
+#         self.model = model(
+#             config,
+#             modeltime,
+#             domain,
+#             init
+#         )
+#         self.model.initial()
+#         if config.REPORTING['report'] == True:
+#             self.reporting = Reporting(self.model, variable_list)
+#         else:
+#             self.reporting = DummyReporting()
 
-    def dynamic(self):
-        pass
+#     def initial(self):
+#         self.reporting.initial()
 
-    def postmcloop(self):
-        pass
-
+#     def dynamic(self):
+#         self.model.time.update(self.currentTimeStep())
+#         self.model.dynamic()
+#         self.reporting.dynamic()
+    
 # from .reporting import Reporting, DummyReporting
 # import logging
 # logger = logging.getLogger(__name__)

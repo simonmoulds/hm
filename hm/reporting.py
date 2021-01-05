@@ -370,11 +370,9 @@ class SummaryVariable(object):
             )
 
     def make_filename(self, suffix, sample):
-        # could add prefix here - e.g. 1/2/3/4/.../n
         self.filename = os.path.join(
             self.model.config.output_directory,
             'netcdf',
-            # 'hm_output_' + suffix + '_' + self.varname + '.nc'
             'hm_output_' + suffix + '_' + self.varname + '.' + str(sample).zfill(3) + '.nc'
         )
 
@@ -458,12 +456,6 @@ class DummyReporting(object):
         pass
 
 
-# def open_summary_variable(model, varname, option, variable_list):
-#     # TODO - complete for all frequencies/statistics
-#     if option == 'daily_total':
-#         return TotalSummaryVariable(model, varname, variable_list, freq='1D', suffix='daily_total')
-#     if option == 'year_max':
-#         return MaxSummaryVariable(model, varname, variable_list, freq='1Y', suffix='year_max')
 def open_summary_variable(model, varname, option, sample, variable_list):
     # TODO - complete for all frequencies/statistics
     if option == 'daily_total':
@@ -471,6 +463,14 @@ def open_summary_variable(model, varname, option, sample, variable_list):
     if option == 'year_max':
         return MaxSummaryVariable(model, varname, sample, variable_list, freq='1Y', suffix='year_max')
 
+# OLD (no sample):
+
+# def open_summary_variable(model, varname, option, variable_list):
+#     # TODO - complete for all frequencies/statistics
+#     if option == 'daily_total':
+#         return TotalSummaryVariable(model, varname, variable_list, freq='1D', suffix='daily_total')
+#     if option == 'year_max':
+#         return MaxSummaryVariable(model, varname, variable_list, freq='1Y', suffix='year_max')
 
 class Reporting(object):
     def __init__(
@@ -488,19 +488,15 @@ class Reporting(object):
         self.reporting_variables = _get_reporting_variables(
             self.model.config, config_section
         )
-        self.create_summary_variables(num_samples)  # move to initial
+        self.create_summary_variables(num_samples)
 
     def create_summary_variables(self, num_samples):
-        # self.output_variables = {}
-        self.output_variables = []
-        for i in range(num_samples):
-            sample = i + 1
+        self.output_variables = {}
+        for sample in range(1, num_samples + 1):
             output_variables_dict = {}
             for option, varnames in self.reporting_variables.items():
                 if varnames is not None:
                     for varname in varnames:
-                        # self.output_variables[varname + '_' + option + '_' + str(sample)] = open_summary_variable(
-                        # self.output_variables[varname + '_' + option] = open_summary_variable(
                         output_variables_dict[varname + '_' + option] = open_summary_variable(
                             self.model,
                             varname,
@@ -509,14 +505,12 @@ class Reporting(object):
                             self.variable_list
                         )
                         
-            self.output_variables.append(output_variables_dict)
+            self.output_variables[sample] = output_variables_dict
             
-    def initial(self, sample):
-        output_variable_dict = self.output_variables[sample-1]
-        for _, value in output_variable_dict.items():
+    def initial(self, sample=1):
+        for _, value in self.output_variables[sample].items():
             value.initial()
 
-    def dynamic(self, sample):
-        output_variable_dict = self.output_variables[sample-1]
-        for _, value in output_variable_dict.items():
+    def dynamic(self, sample=1):
+        for _, value in self.output_variables[sample].items():
             value.update()
