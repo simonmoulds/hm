@@ -7,6 +7,9 @@ setup(name='hm',
       author='Simon Moulds',
       author_email='sim.moulds@gmail.com',
       license='GPL',
-      packages=find_packages(),
-      zip_safe=False)
+      package_dir= {'hm' : 'hm', 'hm.pcraster' : 'hm/pcraster'},
+      packages=['hm', 'hm.pcraster'],
+      # packages=find_packages(),
+      zip_safe=False
+)
       
