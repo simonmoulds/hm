@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='hm',
       version=0.1,
@@ -7,6 +7,6 @@ setup(name='hm',
       author='Simon Moulds',
       author_email='sim.moulds@gmail.com',
       license='GPL',
-      packages=['hm'],
+      packages=find_packages(),
       zip_safe=False)
       
