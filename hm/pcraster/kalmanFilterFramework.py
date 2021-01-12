@@ -219,8 +219,6 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
             self._userModel()._d_inUpdateWeight = True
             stateVector = self._userModel().setState()
             self._userModel()._d_inUpdateWeight = False
-            print("Hello, world")
-            print(stateVector)
             assert type(stateVector) == numpy.ndarray
             fileName = os.path.join("stateVector",'ensMember%s.tmp' %(sample))
             file = open(fileName,'wb')
