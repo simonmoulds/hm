@@ -24,13 +24,30 @@ def get_variable_names_for_reporting(config, section, option):
         return []
 
 
+def _get_summary_variables(config,  section):
+    var_dict = {}
+    for option in allowed_reporting_options:
+        # get names of variables to be reported
+        var_names = get_variable_names_for_reporting(
+            config, section, option
+        )
+        # get names of variables to be summarised
+        # across model runs (i.e. Monte Carlo simulation)
+        sum_var_names = get_variable_names_for_reporting(
+            config, section, option + '_summary'
+        )
+        # only summarise variables which are actually reported
+        sum_var_names = [nm for nm in sum_var_names if nm in var_names]
+        var_dict[option] = sum_var_names        
+    return box.Box(var_dict, frozen_box=True)
+
 def _get_reporting_variables(config, section):
     var_dict = {}
-    all_vars = []
+    # all_vars = []
     for option in allowed_reporting_options:
         var_names = get_variable_names_for_reporting(config, section, option)
         var_dict[option] = var_names
-        all_vars += var_names
+        # all_vars += var_names
     # all_vars = sorted(set(all_vars))
     # var_dict['all'] = all_vars
     # print(var_dict)
@@ -312,7 +329,7 @@ class _netcdf(object):
         self.ncdf.variables[self.attr.shortname][:] = data
 
 
-class SummaryVariable(object):
+class ReportingVariable(object):
     def __init__(
             self,
             model,
@@ -325,7 +342,12 @@ class SummaryVariable(object):
     ):
         self.model = model
         self.varname = varname
-        self.make_filename(suffix, sample)
+        self.filename = os.path.join(
+            self.model.config.output_directory,
+            'netcdf',
+            'hm_output_' + suffix + '_' + self.varname + '.' + str(sample).zfill(3) + '.nc'
+        )        
+        # self.make_filename(suffix, sample)
         # self.transpose = bool(transpose)
         self._netcdf = _netcdf(
             self.model,
@@ -363,18 +385,18 @@ class SummaryVariable(object):
         self.reporting_times = self.reporting_times.unique()
         if len(self.reporting_times) == 0:
             warnings.warn(
-                'Summary period ' + freq + ' is longer than '
+                'Reporting period ' + freq + ' is longer than '
                 'the model run duration: not creating output '
                 'for variable ' + varname + ' at frequency '
                 + freq
             )
 
-    def make_filename(self, suffix, sample):
-        self.filename = os.path.join(
-            self.model.config.output_directory,
-            'netcdf',
-            'hm_output_' + suffix + '_' + self.varname + '.' + str(sample).zfill(3) + '.nc'
-        )
+    # def make_filename(self, suffix, sample):
+    #     self.filename = os.path.join(
+    #         self.model.config.output_directory,
+    #         'netcdf',
+    #         'hm_output_' + suffix + '_' + self.varname + '.' + str(sample).zfill(3) + '.nc'
+    #     )
 
     def to_netcdf(self):
         self._netcdf.add_data(self.data)
@@ -392,7 +414,7 @@ class SummaryVariable(object):
         pass
 
 
-class MeanSummaryVariable(SummaryVariable):
+class MeanReportingVariable(ReportingVariable):
     def update(self):
         self.data[...,
                   self.model.domain.mask] += vars(self.model)[self.varname]
@@ -403,7 +425,7 @@ class MeanSummaryVariable(SummaryVariable):
             self.reset()
 
 
-class MaxSummaryVariable(SummaryVariable):
+class MaxReportingVariable(ReportingVariable):
     def update(self):
         data = self.data[..., self.model.domain.mask]
         data = data.clip(vars(self.model)[self.varname], None)
@@ -414,7 +436,7 @@ class MaxSummaryVariable(SummaryVariable):
             self.reset()
 
 
-class MinSummaryVariable(SummaryVariable):
+class MinReportingVariable(ReportingVariable):
     def update(self):
         data = self.data[..., self.model.domain.mask]
         data = data.clip(None, vars(self.model)[self.varname])
@@ -425,7 +447,7 @@ class MinSummaryVariable(SummaryVariable):
             self.reset()
 
 
-class EndSummaryVariable(SummaryVariable):
+class EndReportingVariable(ReportingVariable):
     def update(self):
         self.n_timestep += 1
         if self.model.time.curr_time == self.end_of_current_reporting_period:
@@ -435,7 +457,7 @@ class EndSummaryVariable(SummaryVariable):
             self.reset()
 
 
-class TotalSummaryVariable(SummaryVariable):
+class TotalReportingVariable(ReportingVariable):
     def update(self):
         self.data[...,
                   self.model.domain.mask] += vars(self.model)[self.varname]
@@ -456,28 +478,28 @@ class DummyReporting(object):
         pass
 
 
-def open_summary_variable(model, varname, option, sample, variable_list):
+def open_reporting_variable(model, varname, option, sample, variable_list):
     # TODO - complete for all frequencies/statistics
     if option == 'daily_total':
-        return TotalSummaryVariable(model, varname, sample, variable_list, freq='1D', suffix='daily_total')
+        return TotalReportingVariable(model, varname, sample, variable_list, freq='1D', suffix='daily_total')
     if option == 'year_max':
-        return MaxSummaryVariable(model, varname, sample, variable_list, freq='1Y', suffix='year_max')
+        return MaxReportingVariable(model, varname, sample, variable_list, freq='1Y', suffix='year_max')
 
 # OLD (no sample):
 
-# def open_summary_variable(model, varname, option, variable_list):
+# def open_reporting_variable(model, varname, option, variable_list):
 #     # TODO - complete for all frequencies/statistics
 #     if option == 'daily_total':
-#         return TotalSummaryVariable(model, varname, variable_list, freq='1D', suffix='daily_total')
+#         return TotalReportingVariable(model, varname, variable_list, freq='1D', suffix='daily_total')
 #     if option == 'year_max':
-#         return MaxSummaryVariable(model, varname, variable_list, freq='1Y', suffix='year_max')
+#         return MaxReportingVariable(model, varname, variable_list, freq='1Y', suffix='year_max')
 
 class Reporting(object):
     def __init__(
             self,
             model,
             variable_list,
-            num_samples=1,      # Used in Monte-Carlo simulations
+            num_samples=1,
             config_section='REPORTING',
             reporting_options=None,  # not used currently
             run_id=None              # not used currently
@@ -488,16 +510,20 @@ class Reporting(object):
         self.reporting_variables = _get_reporting_variables(
             self.model.config, config_section
         )
-        self.create_summary_variables(num_samples)
+        self.summary_variables = _get_summary_variables(
+            self.model.config, 'MONTE_CARLO'
+        )        
+        self.num_samples = num_samples
+        self.create_reporting_variables()
 
-    def create_summary_variables(self, num_samples):
+    def create_reporting_variables(self):
         self.output_variables = {}
-        for sample in range(1, num_samples + 1):
+        for sample in range(1, self.num_samples + 1):
             output_variables_dict = {}
             for option, varnames in self.reporting_variables.items():
                 if varnames is not None:
                     for varname in varnames:
-                        output_variables_dict[varname + '_' + option] = open_summary_variable(
+                        output_variables_dict[varname + '_' + option] = open_reporting_variable(
                             self.model,
                             varname,
                             option,
@@ -514,3 +540,11 @@ class Reporting(object):
     def dynamic(self, sample=1):
         for _, value in self.output_variables[sample].items():
             value.update()
+            
+    def create_mc_summary_variable(self):
+        for option, varname in self.summary_variables.items():
+            if varname is not None:
+                for sample in range(1, self.num_samples + 1):
+                    obj = self.output_variables[sample][varname + '_' + option]
+                    filename = obj.filename
+                    varname = obj.varname

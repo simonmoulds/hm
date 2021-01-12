@@ -19,8 +19,10 @@ controlled_dim_names = allowed_y_dim_names + \
 # ######################################################## #
 
 intervals = ['hourly', 'three_hourly', 'daily', 'dekadal', 'month', 'year']
-summaries = ['mean', 'max', 'min', 'end', 'total']
+methods = ['mean', 'max', 'min', 'end', 'total']
 allowed_reporting_options = []
+allowed_summary_options = []
 for interval in intervals:
-    for summary in summaries:
-        allowed_reporting_options.append(interval + '_' + summary)
+    for method in methods:
+        allowed_reporting_options.append(interval + '_' + method)
+        allowed_summary_options.append(interval + '_' + method + '_summary')

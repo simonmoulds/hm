@@ -37,8 +37,9 @@ class Configuration(object):
             config_filename,
             output_directory,
             debug_mode=False,
-            system_arguments=None
-    ):
+            system_arguments=None,
+            **kwargs
+    ):        
         if config_filename is None:
             raise ValueError(
                 'No configuration file specified'
