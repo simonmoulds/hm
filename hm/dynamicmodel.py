@@ -18,9 +18,6 @@ class HmDynamicBase(DynamicModel):
         init = None
     ):
         DynamicModel.__init__(self)
-        # self.is_deterministic = False
-        # self.apply_kalman_filter = False
-        # self.apply_particle_filter = False
         self.modeltime = modeltime
         self.model = model(
             config,
@@ -31,7 +28,12 @@ class HmDynamicBase(DynamicModel):
         self.model.initial()
         self.config = config
         self.variable_list = variable_list
-        self.stateVar_module = StateVar(self)  # TODO: rename
+        # initiate the state variable object
+        self.stateVar_module = StateVar(self)
+        # create some flags to detect what type of simulation is being invoked
+        self.is_deterministic = False
+        self.apply_kalman_filter = False
+        self.apply_particle_filter = False
         
     def initiate_reporting(self, num_samples=1):
         if self.config.REPORTING['report'] == True:
@@ -50,14 +52,15 @@ class HmDynamicModel(HmDynamicBase):
         init = None
     ):
         HmDynamicBase.__init__(self, model, config, modeltime, domain, variable_list, init)
-        self.is_deterministic = True
         self.initiate_reporting()
+        self.is_deterministic = True
+        # TODO: this could be used in the case of model coupling
+        self.dump_timesteps = []
 
     def initial(self):
         self.reporting.initial()
 
     def currentSampleNumber(self):
-        # Not sure if this is needed - implemented in parent class already?
         return 1
     
     def dynamic(self):
@@ -85,11 +88,6 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     def initial(self):        
         self.reporting.initial(self.currentSampleNumber())
 
-    # def dynamic(self):
-    #     self.model.time.update(self.currentTimeStep())
-    #     self.model.dynamic()
-    #     self.reporting.dynamic(self.currentSampleNumber())
-
     def postmcloop(self):
         pass
         
@@ -105,6 +103,9 @@ class HmEnKfModel(HmMonteCarloModel, EnKfModel):
     ):
         HmMonteCarloModel.__init__(self, model, config, modeltime, domain, variable_list, init)
         EnKfModel.__init__(self)
+        filter_timesteps = self.config.KALMAN_FILTER['filter_timesteps']
+        combined_dump_timesteps = sorted(filter_timesteps + self.dump_timesteps)
+        self.dump_timesteps = combined_dump_timesteps
 
     def setState(self):
         pass
@@ -120,7 +121,10 @@ class HmEnKfModel(HmMonteCarloModel, EnKfModel):
 
 
 
-    
+
+
+
+        
 # class HmDynamicModel(DynamicModel):    
 #     def __init__(
 #         self,

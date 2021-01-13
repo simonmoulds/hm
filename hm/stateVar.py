@@ -22,25 +22,23 @@ def loadObject(name, num):
     
 class stateVar(object):
 
-    def __init__(self, dynamicmodel, timesteps):
-        # timesteps : timesteps to r/w dump
+    def __init__(self, dynamicmodel):
         self.dynamicmodel = dynamicmodel
-        self.timesteps = timesteps
-        self.state_vars = dynamicmodel.state_vars
+        self.state_varnames = dynamicmodel.state_varnames
 
     def dynamic(self):
-        # filter_timesteps = self.dynamicmodel.config.KALMAN_FILTER['filter_timesteps']
-        if self.model.apply_kalman_filter and self.model.currentTimeStep() in self.timesteps:
+        # if self.model.apply_kalman_filter and self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
+        if self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.currentSampleNumber())
-            for varname in self.state_vars:
+            for varname in self.state_varnames:
                 try:
-                    dumpObject(varname, vars(self.model)[varname], sample)
+                    dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
                 except:
                     pass
 
     def resume(self):
         sample = str(self.currentSampleNumber())
-        for varname in self.state_vars:
+        for varname in self.state_varnames:
             try:
                 loadObject(varname, sample)
             except:
