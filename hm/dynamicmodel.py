@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .reporting import Reporting, DummyReporting
+from .stateVar import stateVar
 from .pcraster.dynamicPCRasterBase import DynamicModel
 from .pcraster.mcPCRasterBase import MonteCarloModel
 from .pcraster.kfPCRasterBase import EnKfModel
@@ -17,6 +18,9 @@ class HmDynamicBase(DynamicModel):
         init = None
     ):
         DynamicModel.__init__(self)
+        # self.is_deterministic = False
+        # self.apply_kalman_filter = False
+        # self.apply_particle_filter = False
         self.modeltime = modeltime
         self.model = model(
             config,
@@ -27,7 +31,8 @@ class HmDynamicBase(DynamicModel):
         self.model.initial()
         self.config = config
         self.variable_list = variable_list
-
+        self.stateVar_module = StateVar(self)  # TODO: rename
+        
     def initiate_reporting(self, num_samples=1):
         if self.config.REPORTING['report'] == True:
             self.reporting = Reporting(self.model, self.variable_list, num_samples)
@@ -45,15 +50,21 @@ class HmDynamicModel(HmDynamicBase):
         init = None
     ):
         HmDynamicBase.__init__(self, model, config, modeltime, domain, variable_list, init)
+        self.is_deterministic = True
         self.initiate_reporting()
 
     def initial(self):
         self.reporting.initial()
 
+    def currentSampleNumber(self):
+        # Not sure if this is needed - implemented in parent class already?
+        return 1
+    
     def dynamic(self):
         self.model.time.update(self.currentTimeStep())
         self.model.dynamic()
-        self.reporting.dynamic()
+        self.stateVar_module.dynamic()
+        self.reporting.dynamic(self.currentSampleNumber())
         
 class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     def __init__(
@@ -74,10 +85,10 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     def initial(self):        
         self.reporting.initial(self.currentSampleNumber())
 
-    def dynamic(self):
-        self.model.time.update(self.currentTimeStep())
-        self.model.dynamic()
-        self.reporting.dynamic(self.currentSampleNumber())
+    # def dynamic(self):
+    #     self.model.time.update(self.currentTimeStep())
+    #     self.model.dynamic()
+    #     self.reporting.dynamic(self.currentSampleNumber())
 
     def postmcloop(self):
         pass
@@ -102,7 +113,8 @@ class HmEnKfModel(HmMonteCarloModel, EnKfModel):
         pass
 
     def resume(self):
-        pass
+        self.stateVar_module.resume()
+    
 
 
 
