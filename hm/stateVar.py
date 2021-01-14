@@ -31,7 +31,7 @@ class stateVar(object):
 
     def dynamic(self):
         # if self.model.apply_kalman_filter and self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
-        if self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
+        if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.currentSampleNumber())
             for varname in self.state_varnames:
                 try:
