@@ -55,7 +55,10 @@ class HmDynamicModel(HmDynamicBase):
         self.initiate_reporting()
         self.is_deterministic = True
         # TODO: this could be used in the case of model coupling
-        self.dump_timesteps = []
+        try:
+            self.dump_timesteps = config.DUMP['timesteps']
+        except:
+            self.dump_timesteps = []
 
     def initial(self):
         self.reporting.initial()
