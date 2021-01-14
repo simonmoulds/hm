@@ -42,6 +42,7 @@ class HmDynamicBase(DynamicModel):
         
     def initiate_reporting(self, num_samples=1):
         if self.config.REPORTING['report'] == True:
+            print('num_samples : ', num_samples)
             self.reporting = Reporting(self.model, self.variable_list, num_samples)
         else:
             self.reporting = DummyReporting()
@@ -49,7 +50,8 @@ class HmDynamicBase(DynamicModel):
     def currentSampleNumber(self):
         return 1
     
-    def initial(self):        
+    def initial(self):
+        print('currentSampleNumber : ', self.currentSampleNumber)
         self.reporting.initial(self.currentSampleNumber())
     # def initial(self):
     #     self.reporting.initial()
