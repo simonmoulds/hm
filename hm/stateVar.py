@@ -32,7 +32,7 @@ class stateVar(object):
     def dynamic(self):
         # if self.model.apply_kalman_filter and self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
         if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
-            sample = str(self.currentSampleNumber())
+            sample = str(self.dynamicmodel.currentSampleNumber())
             for varname in self.state_varnames:
                 try:
                     dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
@@ -40,7 +40,7 @@ class stateVar(object):
                     pass
 
     def resume(self):
-        sample = str(self.currentSampleNumber())
+        sample = str(self.dynamicmodel.currentSampleNumber())
         for varname in self.state_varnames:
             try:
                 loadObject(varname, sample)
