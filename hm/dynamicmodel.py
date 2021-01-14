@@ -105,6 +105,10 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
         MonteCarloModel.currentSampleNumber(self)
         
     def premcloop(self):
+        print(self.nrSamples())
+        print(MonteCarloModel.nrSamples(self))
+        print(self._d_firstSampleNumber)
+        print(self._d_lastSampleNumber)
         self.initiate_reporting(self.nrSamples())
         
     def initial(self):        
