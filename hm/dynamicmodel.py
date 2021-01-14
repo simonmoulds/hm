@@ -29,7 +29,7 @@ class HmDynamicBase(DynamicModel):
         self.config = config
         self.variable_list = variable_list
         # initiate the state variable object
-        self.stateVar_module = StateVar(self)
+        self.stateVar_module = stateVar(self)
         # create some flags to detect what type of simulation is being invoked
         self.is_deterministic = False
         self.apply_kalman_filter = False
