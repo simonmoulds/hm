@@ -105,8 +105,8 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     def premcloop(self):
         self.initiate_reporting(self.nrSamples())
         
-    # def initial(self):        
-    #     self.reporting.initial(self.currentSampleNumber())
+    def initial(self):        
+        self.reporting.initial(self.currentSampleNumber())
 
     def postmcloop(self):
         pass
