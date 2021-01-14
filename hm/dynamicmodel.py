@@ -100,7 +100,7 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
         MonteCarloModel.__init__(self)
 
     def currentSampleNumber(self):
-        MonteCarloModel.currentSampleNumber()
+        MonteCarloModel.currentSampleNumber(self)
         
     def premcloop(self):
         self.initiate_reporting(self.nrSamples())
