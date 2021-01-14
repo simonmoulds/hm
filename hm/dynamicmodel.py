@@ -42,7 +42,6 @@ class HmDynamicBase(DynamicModel):
         
     def initiate_reporting(self, num_samples=1):
         if self.config.REPORTING['report'] == True:
-            print('num_samples : ', num_samples)
             self.reporting = Reporting(self.model, self.variable_list, num_samples)
         else:
             self.reporting = DummyReporting()
@@ -51,10 +50,7 @@ class HmDynamicBase(DynamicModel):
         return 1
     
     def initial(self):
-        print('currentSampleNumber : ', self.currentSampleNumber)
         self.reporting.initial(self.currentSampleNumber())
-    # def initial(self):
-    #     self.reporting.initial()
 
     def dynamic(self):
         self.model.time.update(self.currentTimeStep())
@@ -75,18 +71,6 @@ class HmDynamicModel(HmDynamicBase):
         HmDynamicBase.__init__(self, model, config, modeltime, domain, variable_list, init)
         self.initiate_reporting()
         self.is_deterministic = True
-
-    # def currentSampleNumber(self):
-    #     return 1
-    
-    # def initial(self):
-    #     self.reporting.initial()
-    
-    # def dynamic(self):
-    #     self.model.time.update(self.currentTimeStep())
-    #     self.model.dynamic()
-    #     self.stateVar_module.dynamic()
-    #     self.reporting.dynamic(self.currentSampleNumber())
         
 class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     def __init__(
@@ -102,17 +86,13 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
         MonteCarloModel.__init__(self)
 
     def currentSampleNumber(self):
-        MonteCarloModel.currentSampleNumber(self)
+        return MonteCarloModel.currentSampleNumber(self)
         
     def premcloop(self):
-        print(self.nrSamples())
-        print(MonteCarloModel.nrSamples(self))
-        print(self._d_firstSampleNumber)
-        print(self._d_lastSampleNumber)
         self.initiate_reporting(self.nrSamples())
         
-    def initial(self):        
-        self.reporting.initial(self.currentSampleNumber())
+    # def initial(self):
+    #     self.reporting.initial(self.currentSampleNumber())
 
     def postmcloop(self):
         pass
