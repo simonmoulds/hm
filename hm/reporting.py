@@ -534,7 +534,6 @@ class Reporting(object):
             self.output_variables[sample] = output_variables_dict
             
     def initial(self, sample=1):
-        print('sample:', sample)
         for _, value in self.output_variables[sample].items():
             value.initial()
 
