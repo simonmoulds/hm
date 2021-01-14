@@ -24,7 +24,10 @@ class stateVar(object):
 
     def __init__(self, dynamicmodel):
         self.dynamicmodel = dynamicmodel
-        self.state_varnames = dynamicmodel.state_varnames
+        try:
+            self.state_varnames = dynamicmodel.model.state_varnames
+        except:
+            self.state_varnames = []
 
     def dynamic(self):
         # if self.model.apply_kalman_filter and self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
