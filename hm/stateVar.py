@@ -44,7 +44,6 @@ class stateVar(object):
         for varname in self.state_varnames:
             # try:
             vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
-            print(varname, vars(self.dynamicmodel.model)[varname])
             # except:
             #     pass
                 
