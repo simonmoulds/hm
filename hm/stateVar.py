@@ -34,16 +34,18 @@ class stateVar(object):
         if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.dynamicmodel.currentSampleNumber())
             for varname in self.state_varnames:
-                # try:
                 dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
+                # try:
+                #     dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
                 # except:
                 #     pass
 
     def resume(self):
         sample = str(self.dynamicmodel.currentSampleNumber())
         for varname in self.state_varnames:
-            # try:
             vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
+            # try:
+            #     vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
             # except:
             #     pass
                 
