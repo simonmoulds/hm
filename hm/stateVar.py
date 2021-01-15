@@ -43,7 +43,7 @@ class stateVar(object):
         sample = str(self.dynamicmodel.currentSampleNumber())
         for varname in self.state_varnames:
             try:
-                loadObject(varname, sample)
+                vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
             except:
                 pass
                 
