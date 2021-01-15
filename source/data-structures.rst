@@ -12,11 +12,6 @@ HmSpaceDataArray
 
 .. autoclass:: hm.dataarray.HmSpaceDataArray
 
-:py:class:`hm.HmSpaceDataArray` is a wrapper for `xarray.DataArray`
-for spatial datasets which have no time dimension. Examples from
-environmental modelling applications include maps of topography,
-land use/land cover, and soil properties. 
-
 HmSpaceTimeDataArray
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -57,20 +52,10 @@ arguments:
 HmDomain
 --------
 
-:py:class:`hm.Domain` is a class to represent the spatiotemporal
-model domain.
+.. autoclass:: hm.dataarray.HmSpaceDataArray
 
 Creating a HmModelDomain
 ------------------------
 
-The constructor function `hm.set_domain` takes the following
-arguments:
-
-- ``filename_or_obj``
-- ``modeltime``
-- ``mask_varname``
-- ``area_varname``
-- ``is_1d``
-- ``xy_dimname``
-- ``pseudo_coords``
-- ``**kwargs``
+.. autofunction:: hm.api.set_domain
+		  

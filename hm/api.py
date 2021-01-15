@@ -37,36 +37,33 @@ def set_domain(
         z_coords=None,
         pseudo_coords=None,
         **kwargs):
-    """Open data array which defines the model domain.
+    """Define the model domain.
 
-    Parameters
-    ----------
-    filename_or_obj : str
-        String or object which is passed to xarray
-    modeltime : HmModelTime
-        Object containing the model time
-    mask_varname : str, optional
-        String specifying the name of the variable which defines
-        the model domain
-    area_varname : str, optional
-        String specifying the name of the variable which defines
-        the model domain. If provided and `filename_or_obj`
-        represents a netCDF file, the program searches for the
-        variable in the file, raising an error if it isn't found.
-        If not provided, or if `filename_or_obj` is a GDAL raster
-        file, it is assumed that the values in the mask represent
-        the grid cell area. Note that not all models require the
-        cell area; in these cases it is perfectly fine to use
+    :param filename_or_obj: String or object which is passed to xarray
+    :type filename_or_obj: str
+    :param modeltime: Object containing the temporal grid of the model
+    :type modeltime: class:`hm.modeltime.HmModelTime`
+    :param mask_varname: String specifying the name of the variable 
+        which defines the model domain
+    :type mask_varname: str, optional
+    :param area_varname: String specifying the name of the variable 
+        which defines the model domain. If provided and 
+        `filename_or_obj` represents a netCDF file, the program 
+        searches for the variable in the file, raising an error if it 
+        isn't found. If not provided, or if `filename_or_obj` is a 
+        GDAL raster file, it is assumed that the values in the mask 
+        represent the grid cell area. Note that not all models require 
+        the cell area; in these cases it is perfectly fine to use
         an arbitrary value (e.g. 1)
-    is_1d : bool, optional
-        Whether space is represented as a 2-dimensional
+    :type area_varname: str, optional
+    :param is_1d: Whether space is represented as a 2-dimensional 
         grid or 1-dimensional set of points
-    xy_dimname : str, optional
-        If `is_1d = True`, then `xy_dimname` is the name of the
-        space dimension in `filename_or_obj`
-    pseudo_coords : dict
-        Pseudo coordinates are defined as coordinates which are
-        typically used in hydrological models to represent
+    :type is_1d: bool, optional
+    :param xy_dimname: If `is_1d = True`, then `xy_dimname` is the name 
+        of the space dimension in `filename_or_obj`
+    :type xy_dimname: str, optional
+    :param pseudo_coords: Pseudo coordinates are defined as coordinates 
+        which are typically used in hydrological models to represent
         sub-grid variables (e.g. land use/land cover types),
         but may be used for other purposes (e.g. ensemble
         simulations). The dictionary keys should match the
@@ -76,13 +73,15 @@ def set_domain(
         infrastructure. Dictionary values should be a
         1-dimensional numpy array with the value of each
         coordinate (typically a sequence of integers)
-    **kwargs : any
-        Keyword arguments passed to `xarray.open_dataset()`
+    :type pseudo_coords: dict
+    :param **kwargs: Keyword arguments passed to 
+        class:`xarray.open_dataset()`
+    :type **kwargs: any        
 
-    Returns
-    -------
-    domain : HmDomain
-        The newly created model domain.
+    :return: An object describing the spatiotemporal characteristics 
+        of a model domain.
+    :rtype: class:`hm.domain.HmDomain`
+
     """
     if is_1d & (xy_dimname is None):
         raise ValueError(

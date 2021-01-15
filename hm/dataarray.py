@@ -226,8 +226,14 @@ class HmDomain(HmDataset):
 
 
 class HmSpaceDataArray(HmDataArray):
-    """Class to represent spatial data."""
+    """A wrapper for `xarray.DataArray` for spatial datasets which 
+    have no time dimension. Examples from environmental modelling 
+    applications include maps of topography, land use/land cover, 
+    and soil properties. 
 
+    To load data, use the `hm.api.open_hmdataset` function.
+    """
+    
     def __init__(
             self,
             dataarray,
@@ -238,16 +244,7 @@ class HmSpaceDataArray(HmDataArray):
             has_data=True,
             **kwargs
     ):
-        """To load data, use the `open_hmdataset` function.
-
-        Parameters:
-        -----------
-        dataarray : xarray.DataArray
-        domain : HmDomain object
-        is_1d : bool 
-        xy_dimname : str
-        has_data : bool
-        """
+        """Constructor function."""
         self._domain = domain
         super().__init__(
             dataarray,
