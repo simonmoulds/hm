@@ -9,16 +9,13 @@ import pickle
 # These two functions are copied from LISFLOOD:
 def dumpObject(name, var, num):
     path1 = os.path.join(str(num), 'stateVar', name)
-    file_object1 = open(path1, 'w')
-    print(name)
-    print(var)
-    print(file_object1)
+    file_object1 = open(path1, 'wb')
     pickle.dump(var, file_object1)
     file_object1.close()
 
 def loadObject(name, num):
     path1 = os.path.join(str(num), 'stateVar', name)
-    file_handler1 = open(path1, 'w')
+    file_handler1 = open(path1, 'rb')
     var = pickle.load(file_handler1)
     file_handler1.close()
     return(var)
@@ -37,8 +34,6 @@ class stateVar(object):
         if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.dynamicmodel.currentSampleNumber())
             for varname in self.state_varnames:
-                print('varname:', varname)
-                print('value  :', vars(self.dynamicmodel.model)[varname])
                 # try:
                 dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
                 # except:
