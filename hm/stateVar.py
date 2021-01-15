@@ -10,6 +10,9 @@ import pickle
 def dumpObject(name, var, num):
     path1 = os.path.join(str(num), 'stateVar', name)
     file_object1 = open(path1, 'w')
+    print(name)
+    print(var)
+    print(file_object1)
     pickle.dump(var, file_object1)
     file_object1.close()
 
