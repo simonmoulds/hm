@@ -21,7 +21,26 @@ from .utils import *
 
 
 class HmBaseClass(object):
-    """Base class for the hm data classes."""
+    """Base class for the hm data classes.
+
+    To load data, use the ``open_hmdataset`` function.
+
+    :param dataarray_or_dataset: xarray Dataset or DataArray
+    :type dataarray_or_dataset: xarray.Dataset or xarray.DataArray
+    :param is_1d: Whether the dataset has a one-dimensional 
+    representation of space (i.e. a set of points). This 
+    is opposed to a two-dimensional representation which will 
+    have coordinates to identify the location of each point.
+    :type is_1d: bool, optional
+    :param xy_dimname: If the dataset is one-dimensional, this 
+    parameter specifies the name of the space dimension, which is
+    often non-standard (e.g. 'land').
+    :type xy_dimname: str, optional
+    :param model_is_1d: Whether the model is one-dimensional.
+    :type model_is_1d: bool, optional
+    :param has_data: Whether or not the xarray object contains data
+    :type has_data: bool, optional
+    """
 
     def __init__(
             self,
@@ -31,21 +50,7 @@ class HmBaseClass(object):
             model_is_1d=True,
             has_data=True
     ):
-        """To load data, use the ``open_hmdataset`` function.
-
-        Parameters:
-        -----------
-        dataarray_or_dataset : xarray Dataset or DataArray
-        is_1d : bool
-            Whether the dataset has a one-dimensional representation
-            of space (i.e. a set of points). This is opposed to a
-            two-dimensional representation which will have coordinates
-            to identify the location of each point.
-        xy_dimname : str
-            If the dataset is one-dimensional, this parameter
-            specifies the name of the space dimension, which is
-            often non-standard (e.g. 'land').
-        """
+        """Constructor method."""
         self._data = dataarray_or_dataset
         if is_1d & (xy_dimname not in self._data.dims):
             raise ValueError(
@@ -75,10 +80,6 @@ class HmBaseClass(object):
             & ('x' in self.dims)
             & ('y' in self.dims)
         )
-        # self._is_2d = (
-        #     (not self._is_1d)
-        #     & all(dim in self.dims for dim in (self._dims['x'], self._dims['y']))
-        # )
         self._is_spatial = self._is_1d | self._is_2d
         self._spatial_extent()
 
@@ -95,38 +96,47 @@ class HmBaseClass(object):
 
     @property
     def extent(self):
+        """Spatial extent of the object."""
         return self._extent
 
     @property
     def dims(self):
+        """Dimensions of the object."""
         return tuple(self._dims.keys())
 
     @property
     def coords(self):
+        """Coordinates of the object."""
         return self._coords
 
     @property
     def is_1d(self):
+        """Whether the object is one-dimensional."""
         return self._is_1d
 
     @property
     def is_2d(self):
+        """Whether or not the object is two-dimensional."""
         return self._is_2d
 
     @property
     def is_spatial(self):
+        """Whether or not the object is spatial."""
         return self.is_1d | self.is_2d
 
     @property
     def is_temporal(self):
+        """Whether or not the object is temporal."""
         return 'time' in self.dims
 
     @property
     def has_data(self):
+        """Whether or not the object has data."""
         return self._has_data
 
     @property
     def in_memory(self):
+        """Whether or not the data is stored in memory."""
         return self._in_memory
 
 
@@ -153,23 +163,6 @@ class HmDomain(HmDataset):
             model_is_1d=True,
             has_data=True
     ):
-        """
-        Parameters
-        ----------
-        dataarray_or_dataset : xarray Dataset or DataArray
-        is_1d : bool
-            Whether the dataset has a one-dimensional representation
-            of space (i.e. a set of points). This is opposed to a
-            two-dimensional representation which will have coordinates
-            to identify the location of each point.
-        xy_dimname : str
-            If the dataset is one-dimensional, this parameter
-            specifies the name of the space dimension, which is
-            often non-standard (e.g. 'land').
-        has_data : bool
-            Whether or not ``dataarray_or_dataset`` contains
-            data.
-        """
         super().__init__(
             dataarray_or_dataset,
             is_1d,

@@ -24,7 +24,6 @@ Documentation
 
 * :doc:`rationale`
 * :doc:`overview`
-* :doc:`examples`  
 * :doc:`installing`
 
 .. toctree::
@@ -49,10 +48,15 @@ Documentation
    :hidden:
    :caption: User Guide
 
+   api
    data-structures
    configuration
    reporting
 
+**Examples**
+
+* :doc:`examples`
+   
 **Help & Reference**
 
 .. toctree::

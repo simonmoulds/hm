@@ -10,6 +10,8 @@ HmDataArray
 HmSpaceDataArray
 ^^^^^^^^^^^^^^^^
 
+.. autoclass:: hm.dataarray.HmSpaceDataArray
+
 :py:class:`hm.HmSpaceDataArray` is a wrapper for `xarray.DataArray`
 for spatial datasets which have no time dimension. Examples from
 environmental modelling applications include maps of topography,
