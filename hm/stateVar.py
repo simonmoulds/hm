@@ -34,6 +34,8 @@ class stateVar(object):
         if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.dynamicmodel.currentSampleNumber())
             for varname in self.state_varnames:
+                print('varname:', varname)
+                print('value  :', vars(self.dynamicmodel.model)[varname])
                 # try:
                 dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
                 # except:
