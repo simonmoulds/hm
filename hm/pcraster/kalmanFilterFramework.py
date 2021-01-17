@@ -53,7 +53,8 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
     file = open(fileName, 'wb')
     pickle.dump(observations, file)
     file.close()
-
+    print('observations:', observations)
+    print('covariance  :', covariance)
     fileName = os.path.join("observedState",'cov%s.tmp' % (filtermoment))
     file = open(fileName, 'wb')
     pickle.dump(covariance, file)
@@ -309,7 +310,9 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
     file = open(fileName, 'rb')
     Re = pickle.load(file)
     file.close()
-
+    print('D :',D)
+    print('Re:',Re)
+    
     assert Re.shape == (sizeObservedVector, sizeObservedVector), "Shape of provided matrix Re %s does not match (%s, %s)" %(Re.shape, sizeObservedVector, sizeObservedVector)
 
     # calculate Pe
@@ -324,8 +327,8 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
 
     HPeHt = numpy.dot(H, PeHt)
     HPeHtpRe = HPeHt + Re
-
-
+    print('INV_HPeHt',linalg.pinv(HPeHt))
+    print('INV_HPeHtpRe',linalg.pinv(HPeHtpRe))
     INV = linalg.pinv(HPeHtpRe)
 
 
