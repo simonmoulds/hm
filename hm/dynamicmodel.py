@@ -49,18 +49,16 @@ class HmDynamicBase(DynamicModel):
 
     def currentSampleNumber(self):
         return 1
-    
+
+    # initial() and dynamic() methods are run within the MC loop
     def initial(self):
+        self.model.currentSampleNumber = self.currentSampleNumber()        
         self.model.time.reset()
-        print('Current time:', self.model.time.curr_time)
-        self.model.initial()    # CALL AGAIN?
+        self.model.initial()
         self.stateVar_module.initial()
         self.reporting.initial(self.currentSampleNumber())
 
     def dynamic(self):
-        # EXPERIMENTAL:
-        self.model.currentSampleNumber = self.currentSampleNumber()
-        
         self.model.time.update(self.currentTimeStep())
         self.model.dynamic()
         self.stateVar_module.dynamic()
