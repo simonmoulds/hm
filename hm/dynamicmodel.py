@@ -53,6 +53,9 @@ class HmDynamicBase(DynamicModel):
         self.reporting.initial(self.currentSampleNumber())
 
     def dynamic(self):
+        # EXPERIMENTAL:
+        self.model.currentSampleNumber = self.currentSampleNumber()
+        
         self.model.time.update(self.currentTimeStep())
         self.model.dynamic()
         self.stateVar_module.dynamic()

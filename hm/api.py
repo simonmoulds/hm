@@ -221,19 +221,56 @@ def _get_files_covering_time_period(filename_or_obj, domain):
     return filename_list
 
 
-def _has_format_args(x):
-    format_args = [tup[1]
-                   for tup in string.Formatter().parse(x) if tup[1] is not None]
-    return len(format_args) > 0
+def _get_format_args(x):
+    return [tup[1] for tup in string.Formatter().parse(x) if tup[1] is not None]
 
+# def _has_format_args(x):
+#     format_args = _get_format_args(x)
+#     # format_args = [tup[1]
+#     #                for tup in string.Formatter().parse(x) if tup[1] is not None]
+#     return len(format_args) > 0
+
+def _has_date_format_args(x):
+    format_args = _get_format_args(x)
+    return np.any([x in format_args for x in ['year','month','day']])
+
+
+def _has_mc_format_args(x):
+    format_args = _get_format_args(x)
+    return np.any([x in format_args for x in ['sample']])
+
+
+def _get_filename_list(filename_or_obj, domain, sample=1):
+    if _has_date_format_args(filename_or_obj):
+        filename_list = _get_files_covering_time_period(
+            filename_or_obj,
+            domain
+        )
+    elif _has_mc_format_args(filename_or_obj):
+        filename_list = [filename_or_obj.format(sample=sample)]
+    else:
+        filename_list = [filename_or_obj]    
 
 def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
-    if _has_format_args(filename_or_obj):
-        filename_list = _get_files_covering_time_period(
-            filename_or_obj, domain)
-    else:
-        filename_list = [filename_or_obj]
-
+    # if _has_format_args(filename_or_obj):
+    #     filename_list = _get_files_covering_time_period(
+    #         filename_or_obj, domain)
+    # else:
+    #     filename_list = [filename_or_obj]
+    # if _has_date_format_args(filename_or_obj):
+    #     filename_list = _get_files_covering_time_period(
+    #         filename_or_obj,
+    #         domain
+    #     )
+    # elif _has_mc_format_args(filename_or_obj):
+    #     filename_list = _get_files_for_current_sample(
+    #         filename_or_obj,
+    #         domain
+    #     )
+    # else:
+    #     filename_list = [filename_or_obj]
+    filename_list = _get_filename_list(filename_or_obj, domain)
+        
     if len(filename_list) > 1:
         kwargs['combine'] = 'by_coords'
     try:
@@ -265,11 +302,13 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
 
 
 def _open_netcdf_dataset(filename_or_obj, domain, **kwargs):
-    if _has_format_args(filename_or_obj):
-        filename_list = _get_files_covering_time_period(
-            filename_or_obj, domain)
-    else:
-        filename_list = [filename_or_obj]
+    filename_list = _get_filename_list(filename_or_obj, domain)
+    # if _has_format_args(filename_or_obj):
+    #     filename_list = _get_files_covering_time_period(
+    #         filename_or_obj, domain)
+    # else:
+    #     filename_list = [filename_or_obj]
+    
     # MFDataset results in ValueError:
     # ValueError: MFNetCDF4 only works with NETCDF3_* and NETCDF4_CLASSIC formatted files, not NETCDF4.
     # until this is resolved, we have to implement the

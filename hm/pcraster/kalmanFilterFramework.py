@@ -323,8 +323,8 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
 
     HPeHt = numpy.dot(H, PeHt)
     HPeHtpRe = HPeHt + Re
-    print('A_HPeHt   :', numpy.dot(PeHt, numpy.dot(linalg.pinv(HPeHt), DmAH)))
-    print('A_HPeHtpRe:', numpy.dot(PeHt, numpy.dot(linalg.pinv(HPeHtpRe), DmAH)))
+    # print('A_HPeHt   :', numpy.dot(PeHt, numpy.dot(linalg.pinv(HPeHt), DmAH)))
+    # print('A_HPeHtpRe:', numpy.dot(PeHt, numpy.dot(linalg.pinv(HPeHtpRe), DmAH)))
     INV = linalg.pinv(HPeHtpRe)
 
 

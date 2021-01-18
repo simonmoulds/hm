@@ -17,3 +17,5 @@ class Model(object):
         self.domain = domain
         self.is_1d = is_1d
         self.init = init
+        # EXPERIMENTAL:
+        self.currentSampleNumber = 1
