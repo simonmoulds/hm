@@ -25,7 +25,8 @@ class HmDynamicBase(DynamicModel):
             domain,
             init
         )
-        self.model.initial()
+        # # There is probably a good reason for including this here:
+        # self.model.initial()
         self.config = config
         self.variable_list = variable_list
         # initiate the state variable object
@@ -50,6 +51,7 @@ class HmDynamicBase(DynamicModel):
         return 1
     
     def initial(self):
+        self.model.initial()
         self.reporting.initial(self.currentSampleNumber())
 
     def dynamic(self):
