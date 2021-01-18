@@ -26,7 +26,7 @@ class HmDynamicBase(DynamicModel):
             init
         )
         # # There is probably a good reason for including this here:
-        self.model.initial()
+        # self.model.initial()
         self.config = config
         self.variable_list = variable_list
         # initiate the state variable object
@@ -51,6 +51,7 @@ class HmDynamicBase(DynamicModel):
         return 1
     
     def initial(self):
+        self.model.time.update(self.currentTimeStep())
         self.model.initial()    # CALL AGAIN?
         self.reporting.initial(self.currentSampleNumber())
 
