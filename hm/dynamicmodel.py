@@ -51,6 +51,7 @@ class HmDynamicBase(DynamicModel):
         return 1
     
     def initial(self):
+        self.model.time.reset()
         print('Current time:', self.model.time.curr_time)
         self.model.initial()    # CALL AGAIN?
         self.stateVar_module.initial()
