@@ -441,7 +441,7 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
                 values.append(
                     self._nc_data[file_index[i]].variables[self._varname][tuple(slc)])
             values = np.concatenate(values, axis=self._axis['time'])
-        self._values = values
+        self._values = values   # TODO: this throws an UnboundLocalError if values has not yet been created (i.e. empty values)
 
     @property
     def values(self):

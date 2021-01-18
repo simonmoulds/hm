@@ -248,7 +248,6 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
         )
     elif _has_mc_format_args(filename_or_obj):
         filename_list = [filename_or_obj.format(sample=sample)]
-        print(filename_list)
     else:
         filename_list = [filename_or_obj]
     return filename_list
@@ -271,6 +270,8 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
     #     )
     # else:
     #     filename_list = [filename_or_obj]
+    
+    # TODO: get sample number
     filename_list = _get_filename_list(filename_or_obj, domain)
         
     if len(filename_list) > 1:
