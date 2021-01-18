@@ -51,7 +51,7 @@ class HmDynamicBase(DynamicModel):
         return 1
     
     def initial(self):
-        # self.model.initial()
+        self.model.initial()    # CALL AGAIN?
         self.reporting.initial(self.currentSampleNumber())
 
     def dynamic(self):
