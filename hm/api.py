@@ -253,7 +253,7 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
         filename_list = [filename_or_obj]
     return filename_list
 
-def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
+def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
     # if _has_format_args(filename_or_obj):
     #     filename_list = _get_files_covering_time_period(
     #         filename_or_obj, domain)
@@ -273,7 +273,7 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
     #     filename_list = [filename_or_obj]
     
     # TODO: get sample number
-    filename_list = _get_filename_list(filename_or_obj, domain)
+    filename_list = _get_filename_list(filename_or_obj, domain, sample)
         
     if len(filename_list) > 1:
         kwargs['combine'] = 'by_coords'
@@ -305,8 +305,8 @@ def _open_xarray_dataset(filename_or_obj, domain, **kwargs):
     return ds
 
 
-def _open_netcdf_dataset(filename_or_obj, domain, **kwargs):
-    filename_list = _get_filename_list(filename_or_obj, domain)
+def _open_netcdf_dataset(filename_or_obj, domain, sample, **kwargs):
+    filename_list = _get_filename_list(filename_or_obj, domain, sample)
     # if _has_format_args(filename_or_obj):
     #     filename_list = _get_files_covering_time_period(
     #         filename_or_obj, domain)
@@ -371,8 +371,11 @@ def open_hmdataarray(
     TODO
     """
 
+    # Get model sample
+    sample = kwargs.get('sample', 1)
+    
     # TODO: test whether this is OK:
-    ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)
+    ds = _open_xarray_dataset(filename_or_obj, domain, sample, **xarray_kwargs)
     da = ds[variable]
     has_data = True
     # try:
@@ -483,7 +486,7 @@ def open_hmdataarray(
         # simulation (i.e. a spatial data), but can be
         # considerable when accessed multiple times (i.e.
         # (spatio-)temporal data).
-        nc_dataset = _open_netcdf_dataset(filename_or_obj, domain)
+        nc_dataset = _open_netcdf_dataset(filename_or_obj, domain, sample)
         # if spatial:
         hm = HmSpaceTimeDataArray(
             da,
