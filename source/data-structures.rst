@@ -22,17 +22,7 @@ such as meteorological input data.
 Creating a HmDataArray
 ----------------------
 
-The constructor function `hm.open_hmdataarray` takes the following
-arguments:
-
-- ``filename_or_obj``
-- ``variable``
-- ``domain``
-- ``is_1d``
-- ``xy_dimname``
-- ``use_xarray``
-- ``xarray_kwargs``
-- ``**kwargs``
+.. autofunction:: hm.api.open_hmdataarray
 
 HmModelTime
 -----------

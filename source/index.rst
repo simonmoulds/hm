@@ -48,7 +48,6 @@ Documentation
    :hidden:
    :caption: User Guide
 
-   api
    data-structures
    configuration
    reporting

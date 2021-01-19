@@ -248,33 +248,12 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
         )
     elif _has_mc_format_args(filename_or_obj):
         filename_list = [filename_or_obj.format(sample=sample)]
-        print(filename_list)
     else:
         filename_list = [filename_or_obj]
     return filename_list
 
 def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
-    # if _has_format_args(filename_or_obj):
-    #     filename_list = _get_files_covering_time_period(
-    #         filename_or_obj, domain)
-    # else:
-    #     filename_list = [filename_or_obj]
-    # if _has_date_format_args(filename_or_obj):
-    #     filename_list = _get_files_covering_time_period(
-    #         filename_or_obj,
-    #         domain
-    #     )
-    # elif _has_mc_format_args(filename_or_obj):
-    #     filename_list = _get_files_for_current_sample(
-    #         filename_or_obj,
-    #         domain
-    #     )
-    # else:
-    #     filename_list = [filename_or_obj]
-    
-    # TODO: get sample number
-    filename_list = _get_filename_list(filename_or_obj, domain, sample)
-        
+    filename_list = _get_filename_list(filename_or_obj, domain, sample)        
     if len(filename_list) > 1:
         kwargs['combine'] = 'by_coords'
     try:
@@ -307,12 +286,6 @@ def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
 
 def _open_netcdf_dataset(filename_or_obj, domain, sample, **kwargs):
     filename_list = _get_filename_list(filename_or_obj, domain, sample)
-    # if _has_format_args(filename_or_obj):
-    #     filename_list = _get_files_covering_time_period(
-    #         filename_or_obj, domain)
-    # else:
-    #     filename_list = [filename_or_obj]
-    
     # MFDataset results in ValueError:
     # ValueError: MFNetCDF4 only works with NETCDF3_* and NETCDF4_CLASSIC formatted files, not NETCDF4.
     # until this is resolved, we have to implement the
@@ -327,7 +300,8 @@ def _open_netcdf_dataset(filename_or_obj, domain, sample, **kwargs):
 def load_hmdataarray(filename_or_obj, **kwargs):
     with open_hmdataarray(filename_or_obj, **kwargs) as da:
         return da.load()
-        
+
+    
 def open_hmdataarray(
         filename_or_obj,
         variable,
@@ -341,55 +315,37 @@ def open_hmdataarray(
 ):
     """Open a dataset from a file or file-like object.
 
-    Parameters
-    ----------
-    filename_or_obj : str
-        String or object which is passed to xarray
-    variable : str
-        The name of the variable to read
-    domain : HmDomain
-        The spatio-temporal model domain
-    is_1d : bool, optional
-        Whether space is represented as a 2-dimensional
-        grid or 1-dimensional set of points
-    xy_dimname : str, optional
-        If `is_1d = True`, then `xy_dimname` is the name of the
-        space dimension in `filename_or_obj`
-    use_xarray : bool, optional
-        Currently not used
-
-    Returns
-    -------
-    HmDataArray
-
-    Notes
-    -----
-    TODO
-
-    See also
-    --------
-    TODO
-    """
-
-    # Get model sample
-    sample = kwargs.get('sample', 1)
+    :param filename_or_obj: String or object which is passed to xarray
+    :type filename_or_obj: str        
+    :param variable: The name of the variable to read        
+    :type variable: str
+    :param domain: The spatio-temporal model domain
+    :type domain: HmDomain        
+    :param is_1d: Whether space is represented as a 2-dimensional grid 
+    or one-dimensional set of points
+    :type is_1d: bool, optional
+    :param xy_dimname: If `is_1d = True`, then `xy_dimname` is the name 
+    of the space dimension in `filename_or_obj`        
+    :type xy_dimname: str, optional
+    :param use_xarray: Currently not used.
+    :type use_xarray: bool, optional
+    :param xarray_kwargs: A dictionary containing arguments which can 
+    be passed to xarray constructor functions.
+    :param **kwargs: Keyword arguments passed to 
+    `class:hm.datarray.HmSpaceTimeDataArray` or
+    `class:hm.datarray.HmSpaceDataArray`.
+    :type **kwargs: any        
     
-    # TODO: test whether this is OK:
+    :return: A class inheriting from HmDataArray.
+    :rtype: class:`hm.dataarray.HmDataArray`
+    """
+    # Extract the model sample, which is needed especially when running Monte Carlo
+    # simulations where input filenames (e.g. model parameters) vary depending on
+    # the current sample number.
+    sample = kwargs.get('sample', 1)
     ds = _open_xarray_dataset(filename_or_obj, domain, sample, **xarray_kwargs)
     da = ds[variable]
     has_data = True
-    # try:
-    #     ds = _open_xarray_dataset(filename_or_obj, domain, **xarray_kwargs)
-    #     da = ds[variable]
-    #     has_data = True
-    # except OSError:
-    #     da = xr.DataArray(
-    #         data=np.full(domain._data['area'].shape, np.nan),
-    #         dims=domain._data['area'].dims,
-    #         coords=domain._data['area'].coords
-    #     )
-    #     has_data = False
-
     dims = get_xr_dimension_names(da, is_1d, xy_dimname)
     coords = get_xr_coordinates(da, dims)
     if is_1d & (xy_dimname not in da.dims):
@@ -406,7 +362,6 @@ def open_hmdataarray(
     #         'DataArray object has dimensions which are not specified in '
     #         'the model domain: ' + ', '.join(missing_dims)
     #     )
-
     temporal = is_temporal(da)
     spatial = is_spatial(da, is_1d, xy_dimname)
     if spatial:
