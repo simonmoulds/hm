@@ -95,6 +95,7 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
         return MonteCarloModel.currentSampleNumber(self)
         
     def premcloop(self):
+        print("Hello, world")
         self.initiate_reporting(self.nrSamples())
         
     # def initial(self):
