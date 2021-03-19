@@ -704,25 +704,26 @@ class Reporting(object):
                     da_mean = da.mean(dim='run')
                     da_std = da.std(dim='run')
                     da_var = da.var(dim='run')
+                    print(option)
                     # REFACTOR THIS
                     da_mean.to_netcdf(
                         os.path.join(
                             self.model.config.output_directory,
                             'netcdf',
-                            'hm_output_' + suffix + '_' + varname + '_mean.nc'
+                            'hm_output_' + option + '_' + varname + '_mean.nc'
                         )
                     )
                     da_std.to_netcdf(
                         os.path.join(
                             self.model.config.output_directory,
                             'netcdf',
-                            'hm_output_' + suffix + '_' + varname + '_std.nc'
+                            'hm_output_' + option + '_' + varname + '_std.nc'
                         )
                     )
                     da_var.to_netcdf(
                         os.path.join(
                             self.model.config.output_directory,
                             'netcdf',
-                            'hm_output_' + suffix + '_' + varname + '_var.nc'
+                            'hm_output_' + option + '_' + varname + '_var.nc'
                         )
                     )
