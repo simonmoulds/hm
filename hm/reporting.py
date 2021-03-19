@@ -545,6 +545,8 @@ class Reporting(object):
             value.update()
             
     def create_mc_summary_variable(self):
+        print("Hello, world")
+        print(self.summary_variables)
         for option, varname in self.summary_variables.items():
             if varname is not None:
                 for sample in range(1, self.num_samples + 1):
