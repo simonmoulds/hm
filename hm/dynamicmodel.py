@@ -101,7 +101,7 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
     #     self.reporting.initial(self.currentSampleNumber())
 
     def postmcloop(self):
-        pass
+        self.reporting.create_mc_summary_variable()
         
 class HmEnKfModel(HmMonteCarloModel, EnKfModel):
     def __init__(

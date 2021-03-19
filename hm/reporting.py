@@ -4,6 +4,7 @@
 import os
 import numpy as np
 import box
+import xarray
 
 from .constants import *
 from .utils import *
@@ -409,10 +410,9 @@ class ReportingVariable(object):
             self.end_of_current_reporting_period = self.reporting_times[self.counter]
         else:
             self.end_of_current_reporting_period = self.model.time.endtime
-
+            
     def update(self):
         pass
-
 
 class MeanReportingVariable(ReportingVariable):
     def update(self):
@@ -548,3 +548,6 @@ class Reporting(object):
                     obj = self.output_variables[sample][varname + '_' + option]
                     filename = obj.filename
                     varname = obj.varname
+                    ds = xarray.open_dataset(filename)[varname]
+                    print(ds)
+                    ds.close()
