@@ -95,7 +95,6 @@ class HmMonteCarloModel(HmDynamicBase, MonteCarloModel):
         return MonteCarloModel.currentSampleNumber(self)
         
     def premcloop(self):
-        print("Hello, world")
         self.initiate_reporting(self.nrSamples())
         
     # def initial(self):
@@ -129,18 +128,6 @@ class HmEnKfModel(HmMonteCarloModel, EnKfModel):
 
     def resume(self):
         self.stateVar_module.resume()
-    
-    def postmcloop(self):
-        print("Hello, world")
-        self.reporting.create_mc_summary_variable()
-
-
-
-
-
-
-
-
         
 # class HmDynamicModel(DynamicModel):    
 #     def __init__(

@@ -234,6 +234,7 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
           self._userModel()._d_filterPeriod += 1
 
     self._userModel()._setFirstTimeStep(1)
+    print("Running postmcloop")
     self._userModel()._runPostmcloop()
     return 0
 
