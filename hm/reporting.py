@@ -28,7 +28,6 @@ def get_variable_names_for_reporting(config, section, option):
 def _get_summary_variables(config,  section):
     var_dict = {}
     for option in allowed_reporting_options:
-        print(option)
         # get names of variables to be reported
         sum_var_names = get_variable_names_for_reporting(
             config, section, option + '_summary'
@@ -41,7 +40,6 @@ def _get_summary_variables(config,  section):
         # # only summarise variables which are actually reported
         # sum_var_names = [nm for nm in sum_var_names if nm in var_names]
         # print(var_names)
-        print(sum_var_names)
         # print(len(sum_var_names))
         # if len(sum_var_names) > 0:
         #     var_dict[option] = sum_var_names
@@ -553,14 +551,15 @@ class Reporting(object):
     def create_mc_summary_variable(self):
         print("Hello, world")
         print(self.summary_variables)
-        for option, varname in self.summary_variables.items():
-            if varname is not None:
-                for sample in range(1, self.num_samples + 1):
-                    obj = self.output_variables[sample][str(varname) + '_' + str(option)]
-                    obj_filename = obj.filename
-                    obj_varname = obj.varname
-                    print(obj_filename)
-                    print(obj_varname)
+        for option, varnames in self.summary_variables.items():
+            if varnames is not None:
+                for varname in varnames:
+                    for sample in range(1, self.num_samples + 1):
+                        obj = self.output_variables[sample][str(varname) + '_' + str(option)]
+                        obj_filename = obj.filename
+                        obj_varname = obj.varname
+                        print(obj_filename)
+                        print(obj_varname)
                     # ds = xarray.open_dataset(filename)[varname]
                     # print(ds)
                     # ds.close()
