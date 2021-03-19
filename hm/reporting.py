@@ -37,10 +37,10 @@ def _get_summary_variables(config,  section):
         sum_var_names = get_variable_names_for_reporting(
             config, section, option + '_summary'
         )
-        print(sum_var_names)
         # only summarise variables which are actually reported
         sum_var_names = [nm for nm in sum_var_names if nm in var_names]
-        var_dict[option] = sum_var_names        
+        if len(sum_var_names) > 0:
+            var_dict[option] = sum_var_names
     return box.Box(var_dict, frozen_box=True)
 
 def _get_reporting_variables(config, section):
@@ -548,11 +548,11 @@ class Reporting(object):
         for option, varname in self.summary_variables.items():
             if varname is not None:
                 for sample in range(1, self.num_samples + 1):
-                    print(filename)
-                    print(varname)
-                    # obj = self.output_variables[sample][str(varname) + '_' + str(option)]
-                    # filename = obj.filename
-                    # varname = obj.varname
+                    obj = self.output_variables[sample][str(varname) + '_' + str(option)]
+                    obj_filename = obj.filename
+                    obj_varname = obj.varname
+                    print(obj_filename)
+                    print(obj_varname)
                     # ds = xarray.open_dataset(filename)[varname]
                     # print(ds)
                     # ds.close()
