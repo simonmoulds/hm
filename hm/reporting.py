@@ -541,8 +541,8 @@ class Reporting(object):
                         obj = self.output_variables[sample][str(varname) + '_' + str(option)]                        
                         da_list.append(xarray.open_dataset(obj.filename)[obj._netcdf.attr.shortname])
                     da = xarray.concat(da_list, dim='run')
-                    da_mean = xarr_merged.mean(dim='run')
-                    da_std = xarr_merged.std(dim='run')
-                    da_var = xarr_merged.var(dim='run')
+                    da_mean = da.mean(dim='run')
+                    da_std = da.std(dim='run')
+                    da_var = da.var(dim='run')
                     # da.to_netcdf()
                     
