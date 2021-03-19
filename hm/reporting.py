@@ -39,6 +39,9 @@ def _get_summary_variables(config,  section):
         )
         # only summarise variables which are actually reported
         sum_var_names = [nm for nm in sum_var_names if nm in var_names]
+        print(var_names)
+        print(sum_var_names)
+        print(len(sum_var_names))
         if len(sum_var_names) > 0:
             var_dict[option] = sum_var_names
     return box.Box(var_dict, frozen_box=True)
