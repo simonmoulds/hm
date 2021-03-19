@@ -540,9 +540,11 @@ class Reporting(object):
                     for sample in range(1, self.num_samples + 1):
                         obj = self.output_variables[sample][str(varname) + '_' + str(option)]                        
                         da_list += xarray.open_dataset(obj.filename)[obj._netcdf.attr.shortname]
-                    da = xarray.concat(da_list, dim='run')
-                    da_mean = xarr_merged.mean(dim='run')
-                    da_std = xarr_merged.std(dim='run')
-                    da_var = xarr_merged.var(dim='run')
+                    print(varname)
+                    print([x.shape for x in da_list])
+                    # da = xarray.concat(da_list, dim='run')
+                    # da_mean = xarr_merged.mean(dim='run')
+                    # da_std = xarr_merged.std(dim='run')
+                    # da_var = xarr_merged.var(dim='run')
                     # da.to_netcdf()
                     
