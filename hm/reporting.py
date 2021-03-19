@@ -536,10 +536,13 @@ class Reporting(object):
         for option, varnames in self.summary_variables.items():
             if varnames is not None:
                 for varname in varnames:
+                    da_list = []
                     for sample in range(1, self.num_samples + 1):
                         obj = self.output_variables[sample][str(varname) + '_' + str(option)]                        
-                        xarr = xarray.open_dataset(obj.filename)[obj._netcdf.attr.shortname]
-                        print(xarr)
-                    # ds = xarray.open_dataset(filename)[varname]
-                    # print(ds)
-                    # ds.close()
+                        da_list += xarray.open_dataset(obj.filename)[obj._netcdf.attr.shortname]
+                    da = xarray.concat(da_list, dim='run')
+                    da_mean = xarr_merged.mean(dim='run')
+                    da_std = xarr_merged.std(dim='run')
+                    da_var = xarr_merged.var(dim='run')
+                    # da.to_netcdf()
+                    
