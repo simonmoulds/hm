@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 def get_variable_names_for_reporting(config, section, option):
     try:
-        # return vars(config)[section][option]
         varnames = vars(config)[section][option]
         if type(varnames) is list:
             return varnames
@@ -539,11 +538,8 @@ class Reporting(object):
                 for varname in varnames:
                     for sample in range(1, self.num_samples + 1):
                         obj = self.output_variables[sample][str(varname) + '_' + str(option)]                        
-                        obj_filename = obj.filename
-                        obj_varname = obj.varname
-                        attrs = obj._netcdf.attr
-                        print(attrs)
-                        print(obj_varname)
+                        xarr = xarray.open_dataset(obj.filename)[obj._netcdf.attr.shortname]
+                        print(xarr)
                     # ds = xarray.open_dataset(filename)[varname]
                     # print(ds)
                     # ds.close()
