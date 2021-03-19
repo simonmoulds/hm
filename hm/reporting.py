@@ -28,20 +28,23 @@ def get_variable_names_for_reporting(config, section, option):
 def _get_summary_variables(config,  section):
     var_dict = {}
     for option in allowed_reporting_options:
+        print(option)
         # get names of variables to be reported
-        var_names = get_variable_names_for_reporting(
-            config, section, option
-        )
-        # get names of variables to be summarised
-        # across model runs (i.e. Monte Carlo simulation)
         sum_var_names = get_variable_names_for_reporting(
             config, section, option + '_summary'
         )
-        # only summarise variables which are actually reported
-        sum_var_names = [nm for nm in sum_var_names if nm in var_names]
-        print(var_names)
+        # # get names of variables to be summarised
+        # # across model runs (i.e. Monte Carlo simulation)
+        # sum_var_names = get_variable_names_for_reporting(
+        #     config, section, option + '_summary'
+        # )
+        # # only summarise variables which are actually reported
+        # sum_var_names = [nm for nm in sum_var_names if nm in var_names]
+        # print(var_names)
         print(sum_var_names)
-        print(len(sum_var_names))
+        # print(len(sum_var_names))
+        # if len(sum_var_names) > 0:
+        #     var_dict[option] = sum_var_names
         if len(sum_var_names) > 0:
             var_dict[option] = sum_var_names
     return box.Box(var_dict, frozen_box=True)
