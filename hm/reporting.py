@@ -545,7 +545,7 @@ class Reporting(object):
         for option, varname in self.summary_variables.items():
             if varname is not None:
                 for sample in range(1, self.num_samples + 1):
-                    obj = self.output_variables[sample][varname + '_' + option]
+                    obj = self.output_variables[sample][str(varname) + '_' + str(option)]
                     filename = obj.filename
                     varname = obj.varname
                     ds = xarray.open_dataset(filename)[varname]
