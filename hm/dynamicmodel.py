@@ -130,6 +130,9 @@ class HmEnKfModel(HmMonteCarloModel, EnKfModel):
     def resume(self):
         self.stateVar_module.resume()
     
+    def postmcloop(self):
+        print("Hello, world")
+        self.reporting.create_mc_summary_variable()
 
 
 
