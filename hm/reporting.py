@@ -704,7 +704,6 @@ class Reporting(object):
                     da_mean = da.mean(dim='run')
                     da_std = da.std(dim='run')
                     da_var = da.var(dim='run')
-                    print(option)
                     # REFACTOR THIS
                     da_mean.to_netcdf(
                         os.path.join(
