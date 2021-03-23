@@ -9,25 +9,24 @@ import pickle
 # These two functions are copied from LISFLOOD:
 def dumpObject(name, var, num):
     path1 = os.path.join(str(num), 'stateVar', name)
-    file_object1 = open(path1, 'wb')
-    pickle.dump(var, file_object1)
-    file_object1.close()
+    try:
+        with open(path1, 'wb') as f:
+            pickle.dump(var, f)
+    except:
+        pass
 
 def loadObject(name, num):
     path1 = os.path.join(str(num), 'stateVar', name)
-    file_handler1 = open(path1, 'rb')
-    var = pickle.load(file_handler1)
-    file_handler1.close()
-    return(var)
+    try:
+        with open(path1, 'rb') as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return 0
     
 class stateVar(object):
 
     def __init__(self, dynamicmodel):
         self.dynamicmodel = dynamicmodel
-        # try:
-        #     self.state_varnames = dynamicmodel.model.state_varnames
-        # except:
-        #     self.state_varnames = []
 
     def initial(self):
         try:
@@ -36,23 +35,16 @@ class stateVar(object):
             self.state_varnames = []
         
     def dynamic(self):
-        # if self.model.apply_kalman_filter and self.model.currentTimeStep() in self.dynamicmodel.dump_timesteps:
         if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.dynamicmodel.currentSampleNumber())
-            for varname in self.state_varnames:
-                dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
-                # try:
-                #     dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)
-                # except:
-                #     pass
+            dumpObject('model', self.dynamicmodel.model, sample)                
+            # for varname in self.state_varnames:
+            #     dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)                
 
     def resume(self):
         sample = str(self.dynamicmodel.currentSampleNumber())
-        for varname in self.state_varnames:
-            vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
-            # try:
-            #     vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
-            # except:
-            #     pass
+        self.dynamicmodel.model = loadObject('model', sample)
+        # for varname in self.state_varnames:
+        #     vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
                 
     

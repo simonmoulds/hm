@@ -128,6 +128,31 @@ class HmEnKfModel(HmMonteCarloModel, EnKfModel):
 
     def resume(self):
         self.stateVar_module.resume()
+
+class HmDynamicCoupledModel(HmMonteCarloModel):
+    def __init__(
+            self,
+            model,
+            config,
+            modeltime,
+            domain,
+            variable_list,
+            init = None
+    ):
+        HmMonteCarloModel.__init__(self, model, config, modeltime, domain, variable_list, init)
+        # EnKfModel.__init__(self)
+        # filter_timesteps = self.config.KALMAN_FILTER['filter_timesteps']
+        # combined_dump_timesteps = sorted(filter_timesteps + self.dump_timesteps)
+        # self.dump_timesteps = combined_dump_timesteps
+
+    def setState(self):
+        pass
+
+    def setObservations(self):
+        pass
+
+    def resume(self):
+        self.stateVar_module.resume()
         
 # class HmDynamicModel(DynamicModel):    
 #     def __init__(
