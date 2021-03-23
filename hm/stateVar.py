@@ -27,24 +27,22 @@ class stateVar(object):
 
     def __init__(self, dynamicmodel):
         self.dynamicmodel = dynamicmodel
-
+        
     def initial(self):
         try:
-            self.state_varnames = dynamicmodel.model.state_varnames
+            self.state_varnames = self.dynamicmodel.model.state_varnames
         except:
             self.state_varnames = []
         
     def dynamic(self):
         if self.dynamicmodel.currentTimeStep() in self.dynamicmodel.dump_timesteps:
             sample = str(self.dynamicmodel.currentSampleNumber())
-            dumpObject('model', self.dynamicmodel.model, sample)                
-            # for varname in self.state_varnames:
-            #     dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)                
+            for varname in self.state_varnames:
+                dumpObject(varname, vars(self.dynamicmodel.model)[varname], sample)                
 
     def resume(self):
         sample = str(self.dynamicmodel.currentSampleNumber())
-        self.dynamicmodel.model = loadObject('model', sample)
-        # for varname in self.state_varnames:
-        #     vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
+        for varname in self.state_varnames:
+            vars(self.dynamicmodel.model)[varname] = loadObject(varname, sample)
                 
     
