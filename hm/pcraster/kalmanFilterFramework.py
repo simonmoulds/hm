@@ -324,16 +324,15 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
 
     HPeHt = numpy.dot(H, PeHt)
     HPeHtpRe = HPeHt + Re
-    # print('A_HPeHt   :', numpy.dot(PeHt, numpy.dot(linalg.pinv(HPeHt), DmAH)))
-    # print('A_HPeHtpRe:', numpy.dot(PeHt, numpy.dot(linalg.pinv(HPeHtpRe), DmAH)))
     INV = linalg.pinv(HPeHtpRe)
-
-
+    
     INVDmAH = numpy.dot(INV, DmAH)
 
-
+    print('HPeHt     :', HPeHt)
+    print('HPeHtpRe  :', HPeHtpRe)
+    print('A (before):', A)
     A = A + numpy.dot(PeHt, INVDmAH)
-
+    print('A (after):', A)
 
     for sample in range(1, self._userModel().nrSamples() + 1):
       fileName = os.path.join("stateVector",'a%s.tmp' %(sample))
