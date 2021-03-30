@@ -15,42 +15,38 @@ from box import Box
 from collections import namedtuple, OrderedDict
 from .constants import *
 
-# # I'm not convinced file caching is a good idea - see discussion here:
-# # https://stackoverflow.com/a/6776345
+# TODO:
+# I'm not convinced file caching is a good idea - see discussion here:
+# https://stackoverflow.com/a/6776345
 
 # import resource
 # SOFT_MAX, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
 
-# # file cache for reading netCDF files (this prevents files
-# # from being reopened at every timestep)
-# file_cache = dict()
+# file cache for reading netCDF files (this prevents files
+# from being reopened at every timestep)
+file_cache = dict()
 
-# def clear_cache():
-#     """Function to clear file cache."""
-#     for item in list(file_cache.keys()):
-#         file_cache[item].close()
-#         file_cache.pop(item)
+def clear_item():
+    """Function to clear specific file from cache."""
+    file_cache[item].close()
+    file_cache.pop(item)
 
-# def open_netcdf(filename, **kwargs):
-#     if filename in list(file_cache.keys()):
-#         f = file_cache[filename]
-#     else:
-#         f = nc.Dataset(filename, **kwargs)
-#         # f.set_auto_mask(False)
-#         file_cache[filename] = f
-#     return f
+def clear_cache():
+    """Function to clear file cache."""
+    for item in list(file_cache.keys()):
+        file_cache[item].close()
+        file_cache.pop(item)
 
-# # TEST:
-# for i in np.arange(2000):
-#     filename='/tmp/test_' + str(i) + '.nc'
-#     f = open_netcdf(filename, mode='w')
+def open_netcdf(filename, **kwargs):
+    if filename in list(file_cache.keys()):
+        f = file_cache[filename]
+    else:
+        f = nc.Dataset(filename, **kwargs)
+        # f.set_auto_mask(False)
+        file_cache[filename] = f
+    return f
 
-# try:
-#     f.variables
-# except (AttributeError, TypeError):
-#     pass
-    
-    
+
 # def add_time_dimension(netcdf, dimname, dimvar, **kwargs):
 #     """Add time dimension to a netCDF file.
 

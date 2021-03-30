@@ -160,6 +160,7 @@ class _netcdf(object):
         
         # self.get_time_axis(ncdf)
         
+        # Create netCDF file w/o adding to file cache
         with nc.Dataset(filename, 'w') as ncdf:
             self.add_global_attributes(ncdf)
             self.add_dimensions(ncdf)
@@ -212,7 +213,7 @@ class _netcdf(object):
                 # self.ncdf.sync()
             
         self.is_temporal = is_temporal
-        self.get_time_axis(ncdf)
+        self.get_time_axis()
 
     def add_time_dimension(self, ncdf, dimname, **kwargs):
         """Add time dimension to a netCDF file.
@@ -321,17 +322,26 @@ class _netcdf(object):
 
     def add_data(self, data):
         """Add data to netCDF file."""
-        with nc.Dataset(self.filename, 'r+') as ncdf:
-            if self.is_temporal:
-                self.add_time_varying_data(ncdf, data)
-            else:
-                self.add_static_data(ncdf, data)
-            ncdf.sync()
-        # if self.is_temporal:
-        #     self.add_time_varying_data(ncdf, data)
-        # else:
-        #     self.add_static_data(ncdf, data)
+        
+        ncdf = open_netcdf(self.filename, mode='r+')
+        if self.is_temporal:
+            self.add_time_varying_data(ncdf, data)
+        else:
+            self.add_static_data(ncdf, data)
         # self.ncdf.sync()
+        ncdf.sync()
+        # with nc.Dataset(self.filename, 'r+') as ncdf:
+        #     if self.is_temporal:
+        #         self.add_time_varying_data(ncdf, data)
+        #     else:
+        #         self.add_static_data(ncdf, data)
+        #     ncdf.sync()
+        # # OLD:
+        # # if self.is_temporal:
+        # #     self.add_time_varying_data(ncdf, data)
+        # # else:
+        # #     self.add_static_data(ncdf, data)
+        # # self.ncdf.sync()
 
     def add_time_varying_data(self, ncdf, data):
         """Add time-varying data to netCDF file."""
@@ -356,7 +366,9 @@ class _netcdf(object):
         ncdf.variables[self.attr.shortname][:] = data
         # self.ncdf.variables[self.attr.shortname][:] = data
         
-
+    def close(self):
+        clear_item(self.filename)
+        
 class ReportingVariable(object):
     def __init__(
             self,
@@ -428,6 +440,9 @@ class ReportingVariable(object):
     def update(self):
         pass
 
+    def close(self):
+        self._netcdf.close()
+
 class MeanReportingVariable(ReportingVariable):
     def update(self):
         self.data[...,
@@ -436,8 +451,7 @@ class MeanReportingVariable(ReportingVariable):
         if self.model.time.curr_time == self.end_of_current_reporting_period:
             self.data /= self.n_timestep
             self.to_netcdf()
-            self.reset()
-
+            self.reset()        
 
 class MaxReportingVariable(ReportingVariable):
     def update(self):
@@ -555,6 +569,13 @@ class Reporting(object):
         for _, value in self.output_variables[sample].items():
             value.update()
             
+        if self.model.time.is_last_timestep:
+            self.close()
+
+    def close(self):
+        for _, value in self.output_variables[sample].items():
+            value.close()
+        
     def create_mc_summary_variable(self):
         for option, varnames in self.summary_variables.items():
             if varnames is not None:

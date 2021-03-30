@@ -202,7 +202,7 @@ StaticFramework or DynamicFramework"
 
       assert not self._forkSamples() or self.isParentProcess()
       sample += 1
-
+      
     if self._forkSamples() and  self.isParentProcess():
       for childProcess in self.waitForChildProcessesToFinish():
         if not self._quiet():
