@@ -234,7 +234,6 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
           self._userModel()._d_filterPeriod += 1
 
     self._userModel()._setFirstTimeStep(1)
-    print("Running postmcloop")
     self._userModel()._runPostmcloop()
     return 0
 
@@ -254,12 +253,19 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
     # H matrix 'measurement operator'
     # D matrix with observations
 
-
+    # ########################
+    # Load current model state
+    # ########################
     fileName = os.path.join("stateVector",'ensMember%s.tmp' %(str(1)))
     file = open(fileName,'rb')
     vec = pickle.load(file)
     sizeStateVector = len(vec)
     file.close()
+
+    # #################
+    # Load observations
+    # #################
+    
     # length of the observed vector \todo do we know that?
     fileName = os.path.join("observedState","obs%s.tmp" %(self._userModel()._d_filterTimesteps[self._userModel()._d_filterPeriod]))
     file = open(fileName,'rb')
@@ -267,72 +273,96 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
     sizeObservedVector = len(vec)
     file.close()
 
+    # number of ensemble members 
     nrEnsembleMembers =  self._userModel().nrSamples()
-
 
     # create A
     A = numpy.zeros((sizeStateVector, nrEnsembleMembers), dtype=float)
 
+    # ###############################
+    # Fill A with current model state
+    # ###############################
+
+    # NB - we seem to be loading stateVector twice?
     # \todo is there a better way to construct a matrix from vecors?
     for sample in range(1, self._userModel().nrSamples() + 1):
       fileName = os.path.join("stateVector",'ensMember%s.tmp' %(sample))
       file = open(fileName,'rb')
       vec = pickle.load(file)
       file.close()
+      # A[:,sample-1] = vec
       for i in range(0, sizeStateVector):
         A[i,sample-1] = vec[i]
 
-
-    # obtain H specified by user
+    # ################################
+    # Compute measurement operator (H)
+    # ################################
+    
+    # H is the measurement operator, which relates the true model
+    # state to the observations, allowing for measurement errors
+    
     fileName = os.path.join("observedState","h%s.tmp" %(self._userModel()._d_filterTimesteps[self._userModel()._d_filterPeriod]))
     if os.path.exists(fileName):
+      # First, we attempt to obtain user-specified H
       file = open(fileName,'rb')
       H = pickle.load(file)
       file.close()
     else:
-      # or use the identiy matrix
+      # Otherwise use the identity matrix - this will convert
+      # the state to measurement 1:1
       H = numpy.eye(sizeObservedVector, sizeStateVector, dtype=float)
-
-
     assert H.shape == (sizeObservedVector, sizeStateVector), "Shape of provided matrix H %s does not match (%s, %s)" %(H.shape, sizeObservedVector, sizeStateVector)
 
-    # obtain D
+    # #######################
+    # Obtain measurements (D)
+    # #######################
+
     fileName = os.path.join("observedState","obs%s.tmp" %(self._userModel()._d_filterTimesteps[self._userModel()._d_filterPeriod]))
     file = open(fileName, 'rb')
     D = pickle.load(file)
     file.close()
-
     assert D.shape == (sizeObservedVector, nrEnsembleMembers), "Shape of provided matrix D %s does not match (%s, %s)" %(D.shape, sizeObservedVector, nrEnsembleMembers)
 
-    # obtain error covariance matrix
+    # ###################################################
+    # Obtain the measurement error covariance matrix (Re)
+    # ###################################################
+
+    # Equation 51
+    
     fileName = os.path.join("observedState","cov%s.tmp" %(self._userModel()._d_filterTimesteps[self._userModel()._d_filterPeriod]))
     file = open(fileName, 'rb')
     Re = pickle.load(file)
-    file.close()
-    
+    file.close()    
     assert Re.shape == (sizeObservedVector, sizeObservedVector), "Shape of provided matrix Re %s does not match (%s, %s)" %(Re.shape, sizeObservedVector, sizeObservedVector)
 
-    # calculate Pe
-    Abar = numpy.dot(A,numpy.array( [[1.0/nrEnsembleMembers] * nrEnsembleMembers ] * nrEnsembleMembers, dtype=float))
+    # #########################################
+    # Calculate ensemble covariance matrix (Pe)
+    # #########################################
+
+    # Abar is simply the mean of each row, where each row represents
+    # a vector of observed values across the ensemble, and each
+    # column represents a vector of observations from the same
+    # ensemble member (e.g. different values in space)
+
+    # Equation 45
+    Abar = numpy.dot(A, numpy.array( [[1.0/nrEnsembleMembers] * nrEnsembleMembers ] * nrEnsembleMembers, dtype=float))
+    # Equation 46
     Ad = A - Abar
+    # Equation 47
     Pe =  1.0/(nrEnsembleMembers - 1) * numpy.dot(Ad,numpy.transpose(Ad))
 
-    # calculate the new A matrix
-    DmAH = D - numpy.dot(H,A)
+    # ###############
+    # Update A matrix
+    # ###############
 
-    PeHt = numpy.dot(Pe,numpy.transpose(H))
-
-    HPeHt = numpy.dot(H, PeHt)
-    HPeHtpRe = HPeHt + Re
-    INV = linalg.pinv(HPeHtpRe)
-    
-    INVDmAH = numpy.dot(INV, DmAH)
-
-    print('HPeHt     :', HPeHt)
-    print('HPeHtpRe  :', HPeHtpRe)
-    print('A (before):', A)
-    A = A + numpy.dot(PeHt, INVDmAH)
-    print('A (after):', A)
+    # the following variables reference terms in Equation 52
+    DmAH = D - numpy.dot(H,A)                # D - HA
+    PeHt = numpy.dot(Pe,numpy.transpose(H))  # Pe * H^T [^T denotes transpose]
+    HPeHt = numpy.dot(H, PeHt)               # H * Pe * H^T
+    HPeHtpRe = HPeHt + Re                    # (H * Pe * H^T + Re)
+    INV = linalg.pinv(HPeHtpRe)              # ...
+    INVDmAH = numpy.dot(INV, DmAH)           # ...
+    A = A + numpy.dot(PeHt, INVDmAH)         # Equation 52
 
     for sample in range(1, self._userModel().nrSamples() + 1):
       fileName = os.path.join("stateVector",'a%s.tmp' %(sample))
@@ -350,8 +380,6 @@ class EnsKalmanFilterFramework(frameworkBase.FrameworkBase):
     vec = pickle.load(file)
     file.close()
     return vec
-
-
 
   def _normaliseWeights(self, weights):
     assert weights

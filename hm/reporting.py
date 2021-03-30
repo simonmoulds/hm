@@ -4,6 +4,7 @@
 import os
 import numpy as np
 import box
+import netCDF4 as nc
 import xarray
 
 from .constants import *
@@ -136,191 +137,6 @@ def _get_standard_dimname(dimname):
         return dimname
 
 
-# class netcdfBase(object):
-    
-#     def __init__(
-#             self,
-#             model,
-#             varname,
-#             filename,
-#             variable_list
-#     ):
-#         self.model = model
-#         self.varname = varname
-#         self.filename = filename
-#         self.ncdf = open_netcdf(self.filename, mode='w')
-#         self.variable_list = variable_list
-#         self.attr = _get_variable_attributes(self.varname, self.variable_list)
-#         if self.model.domain.is_1d:
-#             self.attr.dimensions = self.attr.dimensions + ('space',)
-#         else:
-#             self.attr.dimensions = self.attr.dimensions + ('lat', 'lon')
-#         self.attr.dimensions = list(dict.fromkeys(self.attr.dimensions))            
-#         self.add_global_attributes()
-#         self.add_dimensions()
-#         self.get_time_axis()
-#         self.add_variable(self.attr)
-
-#     def add_global_attributes(self):
-#         try:
-#             for name, value in global_netcdf_attributes.items():
-#                 self.ncdf.setncattr(name, value)
-#         except:
-#             pass
-
-#     def add_dimensions(self):
-#         """Add dimensions to netCDF object."""
-#         # TODO: what is the difference between a dimension and coordinate
-#         # See discussion: https://math.stackexchange.com/questions/3327858/terminology-dimension-vs-coordinate
-#         is_temporal = False
-#         for dim in self.attr.dimensions:
-#             if dim in allowed_t_dim_names:
-#                 self.add_time_dimension(dim)
-#                 is_temporal = True
-#             else:
-#                 if self.model.domain.is_1d:
-#                     if not (dim in allowed_x_dim_names) | (dim in allowed_y_dim_names):
-#                         self.add_nontime_dimension(dim)
-#                 else:
-#                     self.add_nontime_dimension(dim)
-
-#         # TODO: this doesn't work for 1D outputs, because the dimensions in
-#         # variable_list include lat/lon
-#         # - Remove lat/lon from variable_list dimensions
-#         # - Test if 1D or 2D
-#         # - Test if lat/long
-#         # - If 1D, we need to write spatial coordinates as variables
-#         if self.model.domain.is_1d:
-#             for dimname in ['lat','lon']:
-#                 attr = _get_variable_attributes(dimname, self.variable_list)
-#                 attr.dimensions = ('space',)
-#                 self.add_variable(attr)
-#                 standard_dimname = _get_standard_dimname(dimname)
-#                 self.ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
-#                 self.ncdf.sync()
-            
-#         self.is_temporal = is_temporal
-
-#     def add_time_dimension(self, dimname, **kwargs):
-#         """Add time dimension to a netCDF file.
-
-#         Time dimension is unlimited so that data can
-#         be added during simulation.
-#         """
-#         attr = _get_variable_attributes(dimname, self.variable_list)
-#         self.ncdf.createDimension(attr.shortname, None)
-#         var = self.ncdf.createVariable(
-#             attr.shortname,
-#             attr.datatype,
-#             attr.dimensions,
-#             **kwargs
-#         )
-#         var.standard_name = attr.standard_name
-#         var.long_name = attr.long_name
-#         var.units = attr.units
-#         var.calendar = attr.calendar
-#         self.ncdf.sync()
-
-#     def add_nontime_dimension(self, dimname, **kwargs):
-#         """Add non-time dimension to a netCDF file."""
-#         attr = _get_variable_attributes(dimname, self.variable_list)
-#         # since nontime dimensions are limited (unlike time, which
-#         # is conventionally unlimited), we need to get the dimension
-#         # size
-#         standard_dimname = _get_standard_dimname(dimname)
-#         dimvals = np.array(self.model.domain.coords[standard_dimname])
-#         self.ncdf.createDimension(attr.shortname, len(dimvals))
-#         if dimname in allowed_x_dim_names + allowed_y_dim_names:
-#             # if spatial dimension, ensure sufficient precision
-#             # to deal with resolutions with repeating decimals
-#             # (e.g. 1/12 degree)
-#             kwargs['zlib'] = True
-#             kwargs['least_significant_digit'] = 16
-            
-#         var = self.ncdf.createVariable(
-#             attr.shortname,
-#             attr.datatype,
-#             attr.dimensions,
-#             **kwargs
-#         )
-#         var.standard_name = self.variable_list.netcdf_standard_name[dimname]
-#         var.long_name = self.variable_list.netcdf_long_name[dimname]
-#         var.units = self.variable_list.netcdf_units[dimname]
-#         standard_dimname = _get_standard_dimname(dimname)
-#         var[:] = dimvals
-#         self.ncdf.sync()
-
-#     def get_time_axis(self):
-#         if self.is_temporal:
-#             self.time_axis = [index for index, value in enumerate(
-#                 self.attr.dimensions) if value in allowed_t_dim_names][0]
-#             # self.time_axis = [index for index, value in enumerate(self.model.domain._dims) if value in allowed_t_dim_names][0]
-#         else:
-#             self.time_axis = None
-
-#     def add_variable(self, attr, **kwargs):
-#         """Add variable to netCDF file."""
-#         var = self.ncdf.createVariable(
-#             attr.shortname,
-#             attr.datatype,
-#             attr.dimensions,
-#             **kwargs
-#         )
-#         try:
-#             var.standard_name = attr.standard_name
-#         except:
-#             pass
-#         try:
-#             var.long_name = attr.long_name
-#         except:
-#             pass
-#         try:
-#             var.units = attr.units
-#         except:
-#             pass
-#         self.ncdf.sync()
-
-# class netcdfOutput(netcdfBase):
-    
-#     def add_data(self, data):
-#         """Add data to netCDF file."""
-#         if self.is_temporal:
-#             self.add_time_varying_data(data)
-#         else:
-#             self.add_static_data(data)
-#         self.ncdf.sync()
-
-#     def add_time_varying_data(self, data):
-#         """Add time-varying data to netCDF file."""
-#         timevar = self.ncdf.variables['time']
-#         try:
-#             time_index = len(timevar)
-#         except:
-#             time_index = 0
-#         timevar[time_index] = nc.date2num(
-#             self.model.time.timestamp,
-#             timevar.units,
-#             timevar.calendar
-#         )
-#         slc = [slice(None)] * len(self.attr.dimensions)
-#         slc[self.time_axis] = time_index
-#         self.ncdf.variables[self.attr.shortname][slc] = data
-
-#     # def convert_xarray_data(self, xarray_obj):
-#     #     timevar = self.ncdf.variables['time']
-#     #     timevar[:] = nc.date2num(
-#     #         xarray_obj.time.values.astype('datetime64[s]').tolist(),
-#     #         timevar.units,
-#     #         timevar.calendar
-#     #     )
-#     #     self.ncdf.variables[:] = xarray_obj
-        
-        
-#     def add_static_data(self, data):
-#         """Add time-invariant data to the netCDF file."""
-#         self.ncdf.variables[self.attr.shortname][:] = data
-    
-
 class _netcdf(object):
     
     def __init__(
@@ -333,41 +149,50 @@ class _netcdf(object):
         self.model = model
         self.varname = varname
         self.filename = filename
-        self.ncdf = open_netcdf(self.filename, mode='w')
+        # self.ncdf = open_netcdf(self.filename, mode='w')
         self.variable_list = variable_list
         self.attr = _get_variable_attributes(self.varname, self.variable_list)
         if self.model.domain.is_1d:
             self.attr.dimensions = self.attr.dimensions + ('space',)
         else:
             self.attr.dimensions = self.attr.dimensions + ('lat', 'lon')
-        self.attr.dimensions = list(dict.fromkeys(self.attr.dimensions))            
-        self.add_global_attributes()
-        self.add_dimensions()
-        self.get_time_axis()
-        self.add_variable(self.attr)
+        self.attr.dimensions = list(dict.fromkeys(self.attr.dimensions))
+        
+        # self.get_time_axis(ncdf)
+        
+        with open(filename, 'w') as ncdf:
+            self.add_global_attributes(ncdf)
+            self.add_dimensions(ncdf)
+            # self.get_time_axis(ncdf)
+            self.add_variable(ncdf, self.attr)
+        # self.add_global_attributes()
+        # self.add_dimensions()
+        # self.get_time_axis()
+        # self.add_variable(self.attr)
 
-    def add_global_attributes(self):
+    def add_global_attributes(self, ncdf):
         try:
             for name, value in global_netcdf_attributes.items():
-                self.ncdf.setncattr(name, value)
+                # self.ncdf.setncattr(name, value)
+                ncdf.setncattr(name, value)
         except:
             pass
 
-    def add_dimensions(self):
+    def add_dimensions(self, ncdf):
         """Add dimensions to netCDF object."""
         # TODO: what is the difference between a dimension and coordinate
         # See discussion: https://math.stackexchange.com/questions/3327858/terminology-dimension-vs-coordinate
         is_temporal = False
         for dim in self.attr.dimensions:
             if dim in allowed_t_dim_names:
-                self.add_time_dimension(dim)
+                self.add_time_dimension(ncdf, dim)
                 is_temporal = True
             else:
                 if self.model.domain.is_1d:
                     if not (dim in allowed_x_dim_names) | (dim in allowed_y_dim_names):
-                        self.add_nontime_dimension(dim)
+                        self.add_nontime_dimension(ncdf, dim)
                 else:
-                    self.add_nontime_dimension(dim)
+                    self.add_nontime_dimension(ncdf, dim)
 
         # TODO: this doesn't work for 1D outputs, because the dimensions in
         # variable_list include lat/lon
@@ -379,34 +204,46 @@ class _netcdf(object):
             for dimname in ['lat','lon']:
                 attr = _get_variable_attributes(dimname, self.variable_list)
                 attr.dimensions = ('space',)
-                self.add_variable(attr)
+                self.add_variable(ncdf, attr)
                 standard_dimname = _get_standard_dimname(dimname)
-                self.ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
-                self.ncdf.sync()
+                ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
+                ncdf.sync()
+                # self.ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
+                # self.ncdf.sync()
             
         self.is_temporal = is_temporal
+        self.get_time_axis(ncdf)
 
-    def add_time_dimension(self, dimname, **kwargs):
+    def add_time_dimension(self, ncdf, dimname, **kwargs):
         """Add time dimension to a netCDF file.
 
         Time dimension is unlimited so that data can
         be added during simulation.
         """
         attr = _get_variable_attributes(dimname, self.variable_list)
-        self.ncdf.createDimension(attr.shortname, None)
-        var = self.ncdf.createVariable(
+        ncdf.createDimension(attr.shortname, None)
+        var = ncdf.createVariable(
             attr.shortname,
             attr.datatype,
             attr.dimensions,
             **kwargs
         )
+        # self.ncdf.createDimension(attr.shortname, None)
+        # var = self.ncdf.createVariable(
+        #     attr.shortname,
+        #     attr.datatype,
+        #     attr.dimensions,
+        #     **kwargs
+        # )
         var.standard_name = attr.standard_name
         var.long_name = attr.long_name
         var.units = attr.units
         var.calendar = attr.calendar
-        self.ncdf.sync()
+        ncdf.sync()
+        # self.ncdf.sync()
+        
 
-    def add_nontime_dimension(self, dimname, **kwargs):
+    def add_nontime_dimension(self, ncdf, dimname, **kwargs):
         """Add non-time dimension to a netCDF file."""
         attr = _get_variable_attributes(dimname, self.variable_list)
         # since nontime dimensions are limited (unlike time, which
@@ -414,7 +251,9 @@ class _netcdf(object):
         # size
         standard_dimname = _get_standard_dimname(dimname)
         dimvals = np.array(self.model.domain.coords[standard_dimname])
-        self.ncdf.createDimension(attr.shortname, len(dimvals))
+        ncdf.createDimension(attr.shortname, len(dimvals))
+        # self.ncdf.createDimension(attr.shortname, len(dimvals))
+        
         if dimname in allowed_x_dim_names + allowed_y_dim_names:
             # if spatial dimension, ensure sufficient precision
             # to deal with resolutions with repeating decimals
@@ -422,18 +261,26 @@ class _netcdf(object):
             kwargs['zlib'] = True
             kwargs['least_significant_digit'] = 16
             
-        var = self.ncdf.createVariable(
+        var = ncdf.createVariable(
             attr.shortname,
             attr.datatype,
             attr.dimensions,
             **kwargs
         )
+        # var = self.ncdf.createVariable(
+        #     attr.shortname,
+        #     attr.datatype,
+        #     attr.dimensions,
+        #     **kwargs
+        # )
         var.standard_name = self.variable_list.netcdf_standard_name[dimname]
         var.long_name = self.variable_list.netcdf_long_name[dimname]
         var.units = self.variable_list.netcdf_units[dimname]
         standard_dimname = _get_standard_dimname(dimname)
         var[:] = dimvals
-        self.ncdf.sync()
+        ncdf.sync()
+        # self.ncdf.sync()
+        
 
     def get_time_axis(self):
         if self.is_temporal:
@@ -443,14 +290,20 @@ class _netcdf(object):
         else:
             self.time_axis = None
 
-    def add_variable(self, attr, **kwargs):
+    def add_variable(self, ncdf, attr, **kwargs):
         """Add variable to netCDF file."""
-        var = self.ncdf.createVariable(
+        var = ncdf.createVariable(
             attr.shortname,
             attr.datatype,
             attr.dimensions,
             **kwargs
         )
+        # var = self.ncdf.createVariable(
+        #     attr.shortname,
+        #     attr.datatype,
+        #     attr.dimensions,
+        #     **kwargs
+        # )
         try:
             var.standard_name = attr.standard_name
         except:
@@ -463,19 +316,27 @@ class _netcdf(object):
             var.units = attr.units
         except:
             pass
-        self.ncdf.sync()
+        ncdf.sync()
+        # self.ncdf.sync()
 
     def add_data(self, data):
         """Add data to netCDF file."""
-        if self.is_temporal:
-            self.add_time_varying_data(data)
-        else:
-            self.add_static_data(data)
-        self.ncdf.sync()
+        with nc.Dataset(self.filename, 'r+') as ncdf:
+            if self.is_temporal:
+                self.add_time_varying_data(ncdf, data)
+            else:
+                self.add_static_data(ncdf, data)
+            ncdf.sync()
+        # if self.is_temporal:
+        #     self.add_time_varying_data(ncdf, data)
+        # else:
+        #     self.add_static_data(ncdf, data)
+        # self.ncdf.sync()
 
-    def add_time_varying_data(self, data):
+    def add_time_varying_data(self, ncdf, data):
         """Add time-varying data to netCDF file."""
-        timevar = self.ncdf.variables['time']
+        timevar = ncdf.variables['time']
+        # timevar = self.ncdf.variables['time']
         try:
             time_index = len(timevar)
         except:
@@ -487,12 +348,14 @@ class _netcdf(object):
         )
         slc = [slice(None)] * len(self.attr.dimensions)
         slc[self.time_axis] = time_index
-        self.ncdf.variables[self.attr.shortname][slc] = data
+        ncdf.variables[self.attr.shortname][slc] = data
+        # self.ncdf.variables[self.attr.shortname][slc] = data        
 
-    def add_static_data(self, data):
+    def add_static_data(self, ncdf, data):
         """Add time-invariant data to the netCDF file."""
-        self.ncdf.variables[self.attr.shortname][:] = data
-
+        ncdf.variables[self.attr.shortname][:] = data
+        # self.ncdf.variables[self.attr.shortname][:] = data
+        
 
 class ReportingVariable(object):
     def __init__(
