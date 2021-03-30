@@ -160,7 +160,7 @@ class _netcdf(object):
         
         # self.get_time_axis(ncdf)
         
-        with open(filename, 'w') as ncdf:
+        with nc.Dataset(filename, 'w') as ncdf:
             self.add_global_attributes(ncdf)
             self.add_dimensions(ncdf)
             # self.get_time_axis(ncdf)
