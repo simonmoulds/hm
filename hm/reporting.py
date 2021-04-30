@@ -568,13 +568,19 @@ class Reporting(object):
     def dynamic(self, sample=1):
         for _, value in self.output_variables[sample].items():
             value.update()
-            
-        if self.model.time.is_last_timestep:
-            self.close()
 
-    def close(self):
-        for _, value in self.output_variables[sample].items():
-            value.close()
+        # if filter timestep or last timestep of simulation then we should remove
+        # files from the cache: this prevents too many files from being opened
+        if self.model.time.is_last_timestep or (self.model.time.timestep in self.model.filter_timesteps):
+            for _, value in self.output_variables[sample].items():
+                try:
+                    value.close()
+                except KeyError:
+                    pass
+                
+        # if self.model.time.is_last_timestep:
+        #     for _, value in self.output_variables[sample].items():
+        #         value.close()
         
     def create_mc_summary_variable(self):
         for option, varnames in self.summary_variables.items():

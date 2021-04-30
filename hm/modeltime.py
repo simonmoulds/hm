@@ -147,29 +147,35 @@ class ModelTime(object):
         # self._currTimeFull = datetime.datetime(self.year,self.month,self.day)
 
         # TODO: this should be last timestep of month/year
-        if self.is_last_day_of_month():
+        if self.is_last_day_of_month:
             self._month_index = self._month_index + 1
-        if self.is_last_day_of_year():
+        if self.is_last_day_of_year:
             self._year_index = self._year_index + 1
 
     @property
     def is_first_timestep(self):
         return self.timestep == 1
 
+    @property
     def is_first_day_of_month(self):
         return self.day == 1
     
+    @property
     def is_first_day_of_year(self):
         return self.doy == 1
-    
-    def is_last_day_of_month(self):
-        tomorrow = self.curr_time + datetime.timedelta(days=1)
-        return tomorrow.day == 1
-    
-    def is_last_day_of_year(self):
-        tomorrow = self.curr_time + datetime.timedelta(days=1)
-        return tomorrow.timetuple().tm_yday == 1
 
+    def tomorrow(self):
+        return self.curr_time + datetime.timedelta(days=1)
+
+    @property
+    def is_last_day_of_month(self):
+        return self.tomorrow().day == 1
+
+    @property
+    def is_last_day_of_year(self):
+        return self.tomorrow().timetuple().tm_yday == 1
+
+    @property
     def is_last_timestep(self):
         return self._curr_time == self._endtime
 

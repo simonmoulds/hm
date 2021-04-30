@@ -253,7 +253,7 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
     return filename_list
 
 def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
-    filename_list = _get_filename_list(filename_or_obj, domain, sample)        
+    filename_list = _get_filename_list(filename_or_obj, domain, sample)
     if len(filename_list) > 1:
         kwargs['combine'] = 'by_coords'
     try:
@@ -451,9 +451,11 @@ def open_hmdataarray(
             is_1d,
             xy_dimname,
             model_is_1d,
-            has_data,
-            **kwargs
-        )
+            has_data
+        )# ,
+        #     **kwargs
+        # )
+        
         # else:            
         #     hm = HmTimeDataArray(
         #         da,
@@ -469,6 +471,15 @@ def open_hmdataarray(
             is_1d,
             xy_dimname,
             model_is_1d,
-            has_data,
-            **kwargs)
+            has_data
+        )
+        # THIS FAILS BECAUSE OF invalid kwargs sent to xarray.DataArrary.sel:
+        # hm = HmSpaceDataArray(
+        #     da,
+        #     domain,
+        #     is_1d,
+        #     xy_dimname,
+        #     model_is_1d,
+        #     has_data,
+        #     **kwargs)
     return hm

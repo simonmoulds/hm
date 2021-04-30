@@ -26,8 +26,9 @@ from .constants import *
 # from being reopened at every timestep)
 file_cache = dict()
 
-def clear_item():
+def clear_item(item):
     """Function to clear specific file from cache."""
+    # print(file_cache.keys())
     file_cache[item].close()
     file_cache.pop(item)
 

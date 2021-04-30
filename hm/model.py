@@ -19,3 +19,4 @@ class Model(object):
         self.init = init
         # EXPERIMENTAL:
         self.currentSampleNumber = 1
+        self.filter_timesteps = []
