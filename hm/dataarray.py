@@ -74,6 +74,9 @@ class HmBaseClass(object):
         )
         self._axes = get_xr_dimension_axes(self._data, self._dims)
         self._coords = get_xr_coordinates(self._data, self._dims)
+        # print(self._dims)
+        # print(self._axes)
+        # print(self._coords)
         self._is_1d = ('xy' in self.dims)
         self._is_2d = (
             (not self._is_1d)
@@ -233,7 +236,7 @@ class HmSpaceDataArray(HmDataArray):
 
     To load data, use the `hm.api.open_hmdataset` function.
     """
-    
+
     def __init__(
             self,
             dataarray,
@@ -278,12 +281,17 @@ class HmSpaceDataArray(HmDataArray):
             `xarray.Dataset.sel`
         """
         self._get_index()
-        skip.append('time')
+        skip += ['time']
+        # skip = skip.append('time')
+        # skip.append('time')
         index = {k: v for k, v in self.index.items() if k not in skip}
+        # print(skip)
+        # print(index)
         if all([dim in self._data.coords for dim in self.index]):
             self._data = self._data.sel(index, method=method, **kwargs)
         else:
             self._data = self._data.sel(index)
+        # print("Hello, world")
         self._update_metadata()
 
     def _get_index(self):
@@ -428,12 +436,13 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         # index of files over which the time index is spread
         file_index = np.unique(self._nc_coords['_file'][mf_time_index])
         slc = self._nc_index.copy()
-        
+
         # 10/2020 - numpy throwing a VisibleDeprecationWarning - 'Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated.'
         # converting 'slc' to tuple (i.e. 'tuple(slc)') removes this error
         if len(file_index) == 1:
             slc[self._axes['time']] = time_index
-            values = self._nc_data[file_index[0]].variables[self._varname][tuple(slc)]
+            values = self._nc_data[file_index[0]
+                                   ].variables[self._varname][tuple(slc)]
         elif len(file_index) > 1:
             values = []
             for i in file_index:
@@ -441,7 +450,8 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
                 values.append(
                     self._nc_data[file_index[i]].variables[self._varname][tuple(slc)])
             values = np.concatenate(values, axis=self._axis['time'])
-        self._values = values   # TODO: this throws an UnboundLocalError if values has not yet been created (i.e. empty values)
+        # TODO: this throws an UnboundLocalError if values has not yet been created (i.e. empty values)
+        self._values = values
 
     @property
     def values(self):

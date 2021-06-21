@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from .utils import *
+from .constants import *
+from .modeltime import ModelTime
+from .dataarray import HmDomain, HmDataArray, HmSpaceDataArray, HmSpaceTimeDataArray
 import string
 import xarray as xr
 import numpy as np
@@ -8,11 +12,6 @@ import pandas as pd
 import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
-from .dataarray import HmDomain, HmDataArray, HmSpaceDataArray, HmSpaceTimeDataArray
-from .modeltime import ModelTime
-from .constants import *
-from .utils import *
 
 
 def set_modeltime(starttime, endtime, timedelta):
@@ -26,6 +25,7 @@ class InputError(Exception):
     def __init__(self, expression, message):
         self.expression = expression
         self.message = message
+
 
 def set_domain(
         filename_or_obj,
@@ -148,17 +148,18 @@ def set_domain(
             has_x = np.any([nm in allowed_x_dim_names for nm in varnames])
             has_y = np.any([nm in allowed_y_dim_names for nm in varnames])
             if not (has_x & has_y):
-                raise InputError('Input netCDF must have spatial information')            
+                raise InputError('Input netCDF must have spatial information')
             xnm = [nm for nm in varnames if nm in allowed_x_dim_names]
             ynm = [nm for nm in varnames if nm in allowed_y_dim_names]
             if (len(xnm) > 1) | (len(ynm) > 1):
-                raise InputError('One-dimensional netCDF must have unambiguous variable names for x and y coordinates')
+                raise InputError(
+                    'One-dimensional netCDF must have unambiguous variable names for x and y coordinates')
             # Update coords with x and y coordinates
             coords.update(
-                {'x' : ds.variables[xnm[0]].values,
-                 'y' : ds.variables[ynm[0]].values}
-            )            
-                 
+                {'x': ds.variables[xnm[0]].values,
+                 'y': ds.variables[ynm[0]].values}
+            )
+
     except OSError:
         # An OSError would result if filename_or_obj couldn't
         # be opened with xarray.open_dataset(). Next we try to
@@ -179,14 +180,14 @@ def set_domain(
 
         dims = get_xr_dimension_names(mask, is_1d, xy_dimname)
         coords = get_xr_coordinates(mask, dims)  # separate 1d/2d methods?
-                
+
     # now we construct an xarray.Dataset to represent the
     # dimensions and pseudo-dimensions
     rename_dict = {value: key for key, value in dims.items()}
     mask = mask.astype(bool).rename(rename_dict)
     area = area.rename(rename_dict)
     coords.update({'time': modeltime.times})
-    
+
     # join z, pseudo coordinates
     if z_coords is None:
         z_coords = {}
@@ -230,9 +231,10 @@ def _get_format_args(x):
 #     #                for tup in string.Formatter().parse(x) if tup[1] is not None]
 #     return len(format_args) > 0
 
+
 def _has_date_format_args(x):
     format_args = _get_format_args(x)
-    return np.any([x in format_args for x in ['year','month','day']])
+    return np.any([x in format_args for x in ['year', 'month', 'day']])
 
 
 def _has_mc_format_args(x):
@@ -251,6 +253,7 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
     else:
         filename_list = [filename_or_obj]
     return filename_list
+
 
 def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
     filename_list = _get_filename_list(filename_or_obj, domain, sample)
@@ -301,7 +304,7 @@ def load_hmdataarray(filename_or_obj, **kwargs):
     with open_hmdataarray(filename_or_obj, **kwargs) as da:
         return da.load()
 
-    
+
 def open_hmdataarray(
         filename_or_obj,
         variable,
@@ -335,7 +338,7 @@ def open_hmdataarray(
     `class:hm.datarray.HmSpaceTimeDataArray` or
     `class:hm.datarray.HmSpaceDataArray`.
     :type **kwargs: any        
-    
+
     :return: A class inheriting from HmDataArray.
     :rtype: class:`hm.dataarray.HmDataArray`
     """
@@ -407,7 +410,7 @@ def open_hmdataarray(
 
     else:
         raise InputError('Input netCDF must have spatial information')
-    
+
     if temporal:
         # Check the data covers the time domain
         data_starttime = pd.Timestamp(da.coords[dims.time].values[0])
@@ -452,11 +455,11 @@ def open_hmdataarray(
             xy_dimname,
             model_is_1d,
             has_data
-        )# ,
+        )  # ,
         #     **kwargs
         # )
-        
-        # else:            
+
+        # else:
         #     hm = HmTimeDataArray(
         #         da,
         #         nc_dataset,
@@ -465,13 +468,21 @@ def open_hmdataarray(
         #         **kwargs
         #     )
     else:
+
+        # TEMPORARY FIX
+        if 'skip' in kwargs:
+            kwargs = {'skip': kwargs['skip']}
+        else:
+            kwargs = {'skip': []}
+
         hm = HmSpaceDataArray(
             da,
             domain,
             is_1d,
             xy_dimname,
             model_is_1d,
-            has_data
+            has_data,
+            **kwargs
         )
         # THIS FAILS BECAUSE OF invalid kwargs sent to xarray.DataArrary.sel:
         # hm = HmSpaceDataArray(

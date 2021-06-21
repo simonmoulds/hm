@@ -36,12 +36,12 @@ class HmInputData(object):
             self.xy_dimname,
             self.model.is_1d
         )
-            
+
     def update(self, method):
         vars(self.model)[self.model_varname].select(
             time=self.model.time.curr_time, method=method
         )
-        
+
     def dynamic(self, method='nearest'):
         # TODO: api to HmInputData to work out whether temporal or not
         if vars(self.model)[self.model_varname].is_temporal:
