@@ -6,6 +6,7 @@ import numpy as np
 import box
 import netCDF4 as nc
 import xarray
+import warnings
 
 from .constants import *
 from .utils import *
@@ -34,6 +35,7 @@ def _get_summary_variables(config,  section):
         if len(sum_var_names) > 0:
             var_dict[option] = sum_var_names
     return box.Box(var_dict, frozen_box=True)
+
 
 def _get_reporting_variables(config, section):
     var_dict = {}
@@ -138,7 +140,7 @@ def _get_standard_dimname(dimname):
 
 
 class _netcdf(object):
-    
+
     def __init__(
             self,
             model,
@@ -157,9 +159,9 @@ class _netcdf(object):
         else:
             self.attr.dimensions = self.attr.dimensions + ('lat', 'lon')
         self.attr.dimensions = list(dict.fromkeys(self.attr.dimensions))
-        
+
         # self.get_time_axis(ncdf)
-        
+
         # Create netCDF file w/o adding to file cache
         with nc.Dataset(filename, 'w') as ncdf:
             self.add_global_attributes(ncdf)
@@ -202,16 +204,17 @@ class _netcdf(object):
         # - Test if lat/long
         # - If 1D, we need to write spatial coordinates as variables
         if self.model.domain.is_1d:
-            for dimname in ['lat','lon']:
+            for dimname in ['lat', 'lon']:
                 attr = _get_variable_attributes(dimname, self.variable_list)
                 attr.dimensions = ('space',)
                 self.add_variable(ncdf, attr)
                 standard_dimname = _get_standard_dimname(dimname)
-                ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
+                ncdf.variables[dimname][:] = np.array(
+                    self.model.domain.coords[standard_dimname])
                 ncdf.sync()
                 # self.ncdf.variables[dimname][:] = np.array(self.model.domain.coords[standard_dimname])
                 # self.ncdf.sync()
-            
+
         self.is_temporal = is_temporal
         self.get_time_axis()
 
@@ -242,7 +245,6 @@ class _netcdf(object):
         var.calendar = attr.calendar
         ncdf.sync()
         # self.ncdf.sync()
-        
 
     def add_nontime_dimension(self, ncdf, dimname, **kwargs):
         """Add non-time dimension to a netCDF file."""
@@ -254,14 +256,14 @@ class _netcdf(object):
         dimvals = np.array(self.model.domain.coords[standard_dimname])
         ncdf.createDimension(attr.shortname, len(dimvals))
         # self.ncdf.createDimension(attr.shortname, len(dimvals))
-        
+
         if dimname in allowed_x_dim_names + allowed_y_dim_names:
             # if spatial dimension, ensure sufficient precision
             # to deal with resolutions with repeating decimals
             # (e.g. 1/12 degree)
             kwargs['zlib'] = True
             kwargs['least_significant_digit'] = 16
-            
+
         var = ncdf.createVariable(
             attr.shortname,
             attr.datatype,
@@ -281,7 +283,6 @@ class _netcdf(object):
         var[:] = dimvals
         ncdf.sync()
         # self.ncdf.sync()
-        
 
     def get_time_axis(self):
         if self.is_temporal:
@@ -322,7 +323,7 @@ class _netcdf(object):
 
     def add_data(self, data):
         """Add data to netCDF file."""
-        
+
         ncdf = open_netcdf(self.filename, mode='r+')
         if self.is_temporal:
             self.add_time_varying_data(ncdf, data)
@@ -359,16 +360,17 @@ class _netcdf(object):
         slc = [slice(None)] * len(self.attr.dimensions)
         slc[self.time_axis] = time_index
         ncdf.variables[self.attr.shortname][slc] = data
-        # self.ncdf.variables[self.attr.shortname][slc] = data        
+        # self.ncdf.variables[self.attr.shortname][slc] = data
 
     def add_static_data(self, ncdf, data):
         """Add time-invariant data to the netCDF file."""
         ncdf.variables[self.attr.shortname][:] = data
         # self.ncdf.variables[self.attr.shortname][:] = data
-        
+
     def close(self):
         clear_item(self.filename)
-        
+
+
 class ReportingVariable(object):
     def __init__(
             self,
@@ -384,8 +386,9 @@ class ReportingVariable(object):
         self.filename = os.path.join(
             self.model.config.output_directory,
             'netcdf',
-            'hm_output_' + suffix + '_' + self.varname + '.' + str(sample).zfill(3) + '.nc'
-        )        
+            'hm_output_' + suffix + '_' + self.varname +
+            '.' + str(sample).zfill(3) + '.nc'
+        )
         self._netcdf = _netcdf(
             self.model,
             self.varname,
@@ -409,7 +412,7 @@ class ReportingVariable(object):
             shape = var.shape[:-2]
         self.data = np.zeros(
             shape + (self.model.domain.mask.shape), dtype=np.float64)
-        
+
     def get_reporting_times(self, **kwargs):
         self.reporting_times = pd.date_range(
             self.model.time.starttime,
@@ -436,12 +439,13 @@ class ReportingVariable(object):
             self.end_of_current_reporting_period = self.reporting_times[self.counter]
         else:
             self.end_of_current_reporting_period = self.model.time.endtime
-            
+
     def update(self):
         pass
 
     def close(self):
         self._netcdf.close()
+
 
 class MeanReportingVariable(ReportingVariable):
     def update(self):
@@ -451,7 +455,8 @@ class MeanReportingVariable(ReportingVariable):
         if self.model.time.curr_time == self.end_of_current_reporting_period:
             self.data /= self.n_timestep
             self.to_netcdf()
-            self.reset()        
+            self.reset()
+
 
 class MaxReportingVariable(ReportingVariable):
     def update(self):
@@ -522,6 +527,7 @@ def open_reporting_variable(model, varname, option, sample, variable_list):
 #     if option == 'year_max':
 #         return MaxReportingVariable(model, varname, variable_list, freq='1Y', suffix='year_max')
 
+
 class Reporting(object):
     def __init__(
             self,
@@ -540,7 +546,7 @@ class Reporting(object):
         )
         self.summary_variables = _get_summary_variables(
             self.model.config, 'MONTE_CARLO'
-        )        
+        )
         self.num_samples = num_samples
         self.create_reporting_variables()
 
@@ -558,9 +564,9 @@ class Reporting(object):
                             sample,
                             self.variable_list
                         )
-                        
+
             self.output_variables[sample] = output_variables_dict
-            
+
     def initial(self, sample=1):
         for _, value in self.output_variables[sample].items():
             value.initial()
@@ -577,19 +583,21 @@ class Reporting(object):
                     value.close()
                 except KeyError:
                     pass
-                
+
         # if self.model.time.is_last_timestep:
         #     for _, value in self.output_variables[sample].items():
         #         value.close()
-        
+
     def create_mc_summary_variable(self):
         for option, varnames in self.summary_variables.items():
             if varnames is not None:
                 for varname in varnames:
                     da_list = []
                     for sample in range(1, self.num_samples + 1):
-                        obj = self.output_variables[sample][str(varname) + '_' + str(option)]                        
-                        da_list.append(xarray.open_dataset(obj.filename)[obj._netcdf.attr.shortname])
+                        obj = self.output_variables[sample][str(
+                            varname) + '_' + str(option)]
+                        da_list.append(xarray.open_dataset(obj.filename)[
+                                       obj._netcdf.attr.shortname])
                     da = xarray.concat(da_list, dim='run')
                     da_mean = da.mean(dim='run')
                     da_std = da.std(dim='run')
