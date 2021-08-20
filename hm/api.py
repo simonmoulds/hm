@@ -13,18 +13,27 @@ import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-
 def set_modeltime(starttime, endtime, timedelta):
+    """Create a ModelTime object.
+    
+    Parameters
+    ----------
+    starttime : pandas.Timestamp
+        The start time of the model simulation
+    endtime : pandas.Timestamp
+        The end time of the simulation
+    timedelta : pandas.Timedelta
+        The model time step
+
+    Returns
+    -------
+    modeltime : ModelTime
+        The newly created ModelTime object.
+    """
     return ModelTime(starttime, endtime, timedelta)
 
 # See the following answer to compute area from lat/long grid:
 # https://gis.stackexchange.com/a/232996
-
-
-class InputError(Exception):
-    def __init__(self, expression, message):
-        self.expression = expression
-        self.message = message
 
 
 def set_domain(
@@ -37,16 +46,20 @@ def set_domain(
         z_coords=None,
         pseudo_coords=None,
         **kwargs):
-    """Define the model domain.
+    """Define the model spatial domain.
 
-    :param filename_or_obj: String or object which is passed to xarray
-    :type filename_or_obj: str
-    :param modeltime: Object containing the temporal grid of the model
-    :type modeltime: class:`hm.modeltime.HmModelTime`
-    :param mask_varname: String specifying the name of the variable 
-        which defines the model domain
-    :type mask_varname: str, optional
-    :param area_varname: String specifying the name of the variable 
+    Parameters
+    ----------
+    filename_or_obj: str
+        String or object which is passed to xarray.
+    modeltime: `hm.modeltime.HmModelTime`
+        Object which defines the model temporal grid.
+    mask_varname: str, optional
+        String specifying the name of the variable which defines the 
+        model domain. Only used if `filename_or_obj` represents a
+        netCDF file.
+    area_varname: str, optional
+        String specifying the name of the variable 
         which defines the model domain. If provided and 
         `filename_or_obj` represents a netCDF file, the program 
         searches for the variable in the file, raising an error if it 
@@ -55,14 +68,14 @@ def set_domain(
         represent the grid cell area. Note that not all models require 
         the cell area; in these cases it is perfectly fine to use
         an arbitrary value (e.g. 1)
-    :type area_varname: str, optional
-    :param is_1d: Whether space is represented as a 2-dimensional 
+    is_1d: bool, optional
+        Whether space is represented as a 2-dimensional 
         grid or 1-dimensional set of points
-    :type is_1d: bool, optional
-    :param xy_dimname: If `is_1d = True`, then `xy_dimname` is the name 
+    xy_dimname: str, optional
+        If `is_1d = True`, then `xy_dimname` is the name 
         of the space dimension in `filename_or_obj`
-    :type xy_dimname: str, optional
-    :param pseudo_coords: Pseudo coordinates are defined as coordinates 
+    pseudo_coords: dict, optional 
+        Pseudo coordinates are defined as coordinates 
         which are typically used in hydrological models to represent
         sub-grid variables (e.g. land use/land cover types),
         but may be used for other purposes (e.g. ensemble
@@ -73,15 +86,22 @@ def set_domain(
         infrastructure. Dictionary values should be a
         1-dimensional numpy array with the value of each
         coordinate (typically a sequence of integers)
-    :type pseudo_coords: dict
-    :param **kwargs: Keyword arguments passed to 
-        class:`xarray.open_dataset()`
-    :type **kwargs: any        
+    **kwargs
+        Keyword arguments passed to class:`xarray.open_dataset()`
 
-    :return: An object describing the spatiotemporal characteristics 
-        of a model domain.
-    :rtype: class:`hm.domain.HmDomain`
+    Returns
+    -------
+    domain : hm.domain.HmDomain
+        The newly created ModelDomain object
 
+    Raises
+    ------
+    ValueError
+        If the `xy_dimname` is not specified when `is_1d` is True.
+    KeyError
+        blah blah
+    OSError
+        blah blah
     """
     if is_1d & (xy_dimname is None):
         raise ValueError(
@@ -148,11 +168,11 @@ def set_domain(
             has_x = np.any([nm in allowed_x_dim_names for nm in varnames])
             has_y = np.any([nm in allowed_y_dim_names for nm in varnames])
             if not (has_x & has_y):
-                raise InputError('Input netCDF must have spatial information')
+                raise ValueError('Input netCDF must have spatial information')
             xnm = [nm for nm in varnames if nm in allowed_x_dim_names]
             ynm = [nm for nm in varnames if nm in allowed_y_dim_names]
             if (len(xnm) > 1) | (len(ynm) > 1):
-                raise InputError(
+                raise ValueError(
                     'One-dimensional netCDF must have unambiguous variable names for x and y coordinates')
             # Update coords with x and y coordinates
             coords.update(
@@ -409,7 +429,7 @@ def open_hmdataarray(
                 )
 
     else:
-        raise InputError('Input netCDF must have spatial information')
+        raise ValueError('Input netCDF must have spatial information')
 
     if temporal:
         # Check the data covers the time domain
