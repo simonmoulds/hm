@@ -21,27 +21,26 @@ from .utils import *
 
 
 class HmBaseClass(object):
-    """Base class for the hm data classes.
+    # """Base class for the hm data classes.
 
-    To load data, use the ``open_hmdataset`` function.
+    # To load data, use the ``open_hmdataset`` function.
 
-    :param dataarray_or_dataset: xarray Dataset or DataArray
-    :type dataarray_or_dataset: xarray.Dataset or xarray.DataArray
-    :param is_1d: Whether the dataset has a one-dimensional 
-    representation of space (i.e. a set of points). This 
-    is opposed to a two-dimensional representation which will 
-    have coordinates to identify the location of each point.
-    :type is_1d: bool, optional
-    :param xy_dimname: If the dataset is one-dimensional, this 
-    parameter specifies the name of the space dimension, which is
-    often non-standard (e.g. 'land').
-    :type xy_dimname: str, optional
-    :param model_is_1d: Whether the model is one-dimensional.
-    :type model_is_1d: bool, optional
-    :param has_data: Whether or not the xarray object contains data
-    :type has_data: bool, optional
-    """
-
+    # :param dataarray_or_dataset: xarray Dataset or DataArray
+    # :type dataarray_or_dataset: xarray.Dataset or xarray.DataArray
+    # :param is_1d: Whether the dataset has a one-dimensional 
+    # representation of space (i.e. a set of points). This 
+    # is opposed to a two-dimensional representation which will 
+    # have coordinates to identify the location of each point.
+    # :type is_1d: bool, optional
+    # :param xy_dimname: If the dataset is one-dimensional, this 
+    # parameter specifies the name of the space dimension, which is
+    # often non-standard (e.g. 'land').
+    # :type xy_dimname: str, optional
+    # :param model_is_1d: Whether the model is one-dimensional.
+    # :type model_is_1d: bool, optional
+    # :param has_data: Whether or not the xarray object contains data
+    # :type has_data: bool, optional
+    # """
     def __init__(
             self,
             dataarray_or_dataset,

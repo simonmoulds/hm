@@ -15,23 +15,11 @@ logger = logging.getLogger(__name__)
 
 required_config_sections = []
 
-# valid_none_values = ['None', 'NONE', 'none', '']
-# valid_true_values = ['1', 'True', 'true', 'TRUE']
-# valid_false_values = ['0', 'False', 'false', 'FALSE'] + valid_none_values
-
-
-# def interpret_string(x):
-#     if x in valid_none_values:
-#         return None
-#     elif x in valid_true_values:
-#         return True
-#     elif x in valid_false_values:
-#         return False
-#     else:
-#         return x
-
+# TODO: this class needs to be refactored
 
 class Configuration(object):
+    """Model configuration details.
+    """
     def __init__(
             self,
             config_filename,
@@ -39,7 +27,26 @@ class Configuration(object):
             debug_mode=False,
             system_arguments=None,
             **kwargs
-    ):        
+    ):
+        """Model configuration.
+
+        This class represents the configuration options which are 
+        necessary to run `hm` models. 
+
+        Model developers should design model-specific configuration 
+        classes which inherit from this base class.
+        
+        Parameters
+        ----------
+        config_filename: str
+            Filename of the configuration file. 
+        output_directory: str
+            Intended location of model output
+        debug_mode: bool, optional
+            Should the model be run in debug mode?
+        system_arguments: TODO
+            TODO
+        """
         if config_filename is None:
             raise ValueError(
                 'No configuration file specified'
@@ -59,7 +66,6 @@ class Configuration(object):
         self.set_config(system_arguments)
 
     def parse_config_file(self):
-        """Parse the configuration file."""
         # config = ConfigParser(interpolation=ExtendedInterpolation())
         # config.optionxform = str
         # config.read(self.config_filename)
@@ -87,9 +93,8 @@ class Configuration(object):
         self.backup_configuration()
 
     def initialize_logging(self, log_file_location="Default", system_arguments=None):
-        """Initialize logging. Prints to both the console 
-        and a log file, at configurable levels.
-        """
+        # Initialize logging. Prints to both the console 
+        # and a log file, at configurable levels.
         logging.getLogger().setLevel(logging.DEBUG)
         formatter = logging.Formatter(
             '%(asctime)s %(name)s %(levelname)s %(message)s')
@@ -150,7 +155,7 @@ class Configuration(object):
             )
 
     def backup_configuration(self):
-        """Copy config file to log directory."""
+        # Copy config file to log directory.
         backup_location = os.path.join(
             self.logFileDir,
             os.path.basename(self.config_filename) + '_'
@@ -159,54 +164,37 @@ class Configuration(object):
         )
         shutil.copy(self.config_filename, backup_location)
 
-    # def set_clone_map(self):
-    #     try:
-    #         self.cloneMap = str(self.MODEL_GRID['cloneMap'])
-    #     except:
-    #         self.cloneMap = None
-
-    # def set_land_mask(self):
-    #     try:
-    #         self.landmask = str(self.MODEL_GRID['landmask'])
-    #     except:
-    #         self.landmask = None
     def create_output_directories(self):
+        # TODO: refactor this section of code, because I don't
+        # think they're all required.
         try:
             os.makedirs(self.output_directory)
         except:
             pass
 
         self.tmpDir = os.path.join(self.output_directory, 'tmp')
-        # if os.path.exists(self.tmpDir):
-        #     shutil.rmtree(self.tmpDir)
         try:
             os.makedirs(self.tmpDir)
-        except:
+        except FileExistsError:
             pass
 
         self.outNCDir = os.path.join(self.output_directory, 'netcdf')
-        # if os.path.exists(self.outNCDir):
-        #     shutil.rmtree(self.outNCDir)
         try:
             os.makedirs(self.outNCDir)
-        except:
+        except FileExistsError:
             pass
 
         self.logFileDir = os.path.join(self.output_directory, 'log')
         cleanLogDir = True
-        # if os.path.exists(self.logFileDir) and cleanLogDir:
-        #     shutil.rmtree(self.logFileDir)
         try:
             os.makedirs(self.logFileDir)
-        except:
+        except FileExistsError:
             pass
 
         self.endStateDir = os.path.join(self.output_directory, 'states')
-        # if os.path.exists(self.endStateDir):
-        #     shutil.rmtree(self.endStateDir)
         try:
             os.makedirs(self.endStateDir)
-        except:
+        except FileExistsError:
             pass
 
     def create_coupling_directories(self):
@@ -239,7 +227,6 @@ class Configuration(object):
             self.REPORTING['report'] = False
 
     def check_required_options(self):
-
         default_model_grid_values = {
             'mask': None,
             'mask_varname': None,
@@ -286,11 +273,17 @@ class Configuration(object):
                     )
 
     def generate_missing_section_message(self, section):
+        """Generates message to inform users that a configuration 
+        section is missing.
+        """
         return 'Configuration file ' + self.config_filename \
             + ' does not contain section ' + section \
             + ', which must be supplied'
 
     def generate_missing_option_message(self, section, option):
+        """Generates message to inform users that a configuration
+        option is missing.
+        """
         return 'Section ' + section + ' in configuration file ' \
             + self.config_filename + ' does not contain option ' \
             + option + ', which must be supplied'
