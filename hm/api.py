@@ -98,10 +98,18 @@ def set_domain(
     ------
     ValueError
         If the `xy_dimname` is not specified when `is_1d` is True.
+    ValueError
+        If `filename_or_obj` contains more than one variable, and 
+        `mask_varname` is not specified.
+    ValueError
+        If `filename_or_obj` does not contain spatial information.
+    ValueError
+        If `filename_or_obj` is one-dimensional but has ambiguous 
+        variable names for x and y coordinates.
     KeyError
-        blah blah
+        If the `filename_or_obj` does not contain `mask_varname`.
     OSError
-        blah blah
+        If the `filename_or_obj` cannot be opened.
     """
     if is_1d & (xy_dimname is None):
         raise ValueError(
@@ -173,7 +181,8 @@ def set_domain(
             ynm = [nm for nm in varnames if nm in allowed_y_dim_names]
             if (len(xnm) > 1) | (len(ynm) > 1):
                 raise ValueError(
-                    'One-dimensional netCDF must have unambiguous variable names for x and y coordinates')
+                    'One-dimensional netCDF must have unambiguous variable names for x and y coordinates'
+                )
             # Update coords with x and y coordinates
             coords.update(
                 {'x': ds.variables[xnm[0]].values,
@@ -338,29 +347,44 @@ def open_hmdataarray(
 ):
     """Open a dataset from a file or file-like object.
 
-    :param filename_or_obj: String or object which is passed to xarray
-    :type filename_or_obj: str        
-    :param variable: The name of the variable to read        
-    :type variable: str
-    :param domain: The spatio-temporal model domain
-    :type domain: HmDomain        
-    :param is_1d: Whether space is represented as a 2-dimensional grid 
-    or one-dimensional set of points
-    :type is_1d: bool, optional
-    :param xy_dimname: If `is_1d = True`, then `xy_dimname` is the name 
-    of the space dimension in `filename_or_obj`        
-    :type xy_dimname: str, optional
-    :param use_xarray: Currently not used.
-    :type use_xarray: bool, optional
-    :param xarray_kwargs: A dictionary containing arguments which can 
-    be passed to xarray constructor functions.
-    :param **kwargs: Keyword arguments passed to 
-    `class:hm.datarray.HmSpaceTimeDataArray` or
-    `class:hm.datarray.HmSpaceDataArray`.
-    :type **kwargs: any        
+    Parameters
+    ----------
+    filename_or_obj: str
+        String or object which is passed to xarray
+    variable: str
+        The name of the variable to read        
+    domain: hm.HmDomain
+        The spatio-temporal model domain
+    is_1d: bool, optional
+        Whether space is represented as a 2-dimensional grid 
+        or one-dimensional set of points
+    xy_dimname: str, optional 
+        If `is_1d = True`, then `xy_dimname` is the name 
+        of the space dimension in `filename_or_obj`        
+    use_xarray: bool, optional 
+        Not implemented.
+    xarray_kwargs: dict, optional 
+        A dictionary containing arguments which can 
+        be passed to xarray constructor functions.
+    **kwargs
+        Keyword arguments passed to 
+        `class:hm.datarray.HmSpaceTimeDataArray` or
+        `class:hm.datarray.HmSpaceDataArray`.
 
-    :return: A class inheriting from HmDataArray.
-    :rtype: class:`hm.dataarray.HmDataArray`
+    Returns
+    -------
+    dataarray: hm.dataarray.HmDataArray
+        The newly created HmDataArray object
+
+    Raises
+    ------
+    ValueError
+        If the `xy_dimname` is incorrectly specified when `is_1d` is True.
+    ValueError
+        If the `filename_or_obj` does not contain the model domain 
+        specified by `domain`.
+    ValueError
+        If `filename_or_obj` does not contain spatial information.
     """
     # Extract the model sample, which is needed especially when running Monte Carlo
     # simulations where input filenames (e.g. model parameters) vary depending on
