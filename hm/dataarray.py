@@ -25,8 +25,8 @@ class HmBaseClass(object):
 
     # To load data, use the ``open_hmdataset`` function.
 
-    # :param dataarray_or_dataset: xarray Dataset or DataArray
-    # :type dataarray_or_dataset: xarray.Dataset or xarray.DataArray
+    # dataarray_or_dataset: xarray.Dataset or xarray.DataArray
+    # xarray.Dataset or xarray.DataArray
     # :param is_1d: Whether the dataset has a one-dimensional 
     # representation of space (i.e. a set of points). This 
     # is opposed to a two-dimensional representation which will 
@@ -151,12 +151,6 @@ class HmDataset(HmBaseClass):
 
 
 class HmDomain(HmDataset):
-    """Class to represent a model domain.
-
-    The model domain is the spatial and temporal grid over
-    which computations are performed.
-    """
-
     def __init__(
             self,
             dataarray_or_dataset,
@@ -165,6 +159,31 @@ class HmDomain(HmDataset):
             model_is_1d=True,
             has_data=True
     ):
+        """Model spatial domain.
+
+        The model spatial domain is the spatial grid over which
+        computations are performed.
+
+        To load data, use the ``open_hmdomain`` function.
+
+        Parameters
+        ----------
+        dataarray_or_dataset: xarray.Dataset or xarray.DataArray
+            xarray.Dataset or xarray.DataArray        
+        is_1d: bool, optional
+            Whether the dataset has a one-dimensional 
+            representation of space (i.e. a set of points). This 
+            is opposed to a two-dimensional representation which will 
+            have coordinates to identify the location of each point.
+        xy_dimname: str, optional
+            If the dataset is one-dimensional, this 
+            parameter specifies the name of the space dimension, which
+            is often non-standard (e.g. 'land').
+        model_is_1d: bool, optional
+            Whether the model is one-dimensional.
+        has_data: bool, optional
+            Whether or not the xarray object contains data        
+        """
         super().__init__(
             dataarray_or_dataset,
             is_1d,
@@ -177,65 +196,72 @@ class HmDomain(HmDataset):
 
     @property
     def is_latlon(self):
+        """bool: Whether or not the domain uses geographical coordinates."""
         return True
 
     @property
     def y(self):
+        """numpy.array: y-coordinates."""
         return self._coords['y']
 
     @property
     def x(self):
+        """numpy.array: x-coordinates."""
         return self._coords['x']
 
     @property
-    def area(self):
-        return self._data['area']
-
-    @property
-    def mask(self):
-        return self._data['mask']
-
-    @property
-    def starttime(self):
-        return pd.Timestamp(self._data['time'].values[0])
-
-    @property
-    def endtime(self):
-        return pd.Timestamp(self._data['time'].values[-1])
-
-    @property
     def nx(self):
+        """int: Size of model grid in x-direction."""
         return len(self._coords['x'])
 
     @property
     def ny(self):
+        """int: Size of model grid in y-direction."""
         return len(self._coords['y'])
 
     @property
     def nxy(self):
+        """int: Total number of model grid points."""
         if self._is_1d:
             return len(self._coords['xy'])
         elif self._is_2d:
             return len(self._coords['xy'][0])
 
     @property
+    def area(self):
+        """numpy.array: Area represented by each model grid point."""
+        return self._data['area']
+
+    @property
+    def mask(self):
+        """numpy.array: Model spatial mask.
+
+        This is relevant when the model uses a 2D rectangular grid.
+        """
+        return self._data['mask']
+
+    @property
+    def starttime(self):
+        """pandas.Timestamp: Model start time."""
+        return pd.Timestamp(self._data['time'].values[0])
+
+    @property
+    def endtime(self):
+        """pandas.Timestamp: Model end time."""
+        return pd.Timestamp(self._data['time'].values[-1])
+
+    @property
     def n_timestep(self):
+        """int: Number of time points in model simulation."""
         return len(self._coords['time']) - 1
 
     @property
     def dt(self):
+        """pandas.Timedelta: Duration of each timestep."""
         return (self.endtime - self.starttime) / self.n_timestep
 
 
 class HmSpaceDataArray(HmDataArray):
-    """A wrapper for `xarray.DataArray` for spatial datasets which 
-    have no time dimension. Examples from environmental modelling 
-    applications include maps of topography, land use/land cover, 
-    and soil properties. 
-
-    To load data, use the `hm.api.open_hmdataset` function.
-    """
-
     def __init__(
             self,
             dataarray,
@@ -246,7 +272,35 @@ class HmSpaceDataArray(HmDataArray):
             has_data=True,
             **kwargs
     ):
-        """Constructor function."""
+        """N-dimensional array with labeled coordinates and dimensions.
+
+        A wrapper for `xarray.DataArray` for datasets which have no time
+        dimension, with some additional methods for efficient subsetting 
+        based on the model domain. This would typically be used to 
+        represent spatially varying input parameters, such as maps of 
+        topography, land use/land cover, and soil properties.
+
+        To load data, use the `hm.api.open_hmdataset` function.
+
+        Parameters
+        ----------
+        dataarray: xarray.DataArray
+            xarray.DataArray
+        domain: hm.HmDomain
+            The model domain.
+        is_1d: bool, optional
+            Whether the dataset has a one-dimensional 
+            representation of space (i.e. a set of points). This 
+            is opposed to a two-dimensional representation which will 
+            have coordinates to identify the location of each point.
+        xy_dimname: str, optional
+            If the dataset is one-dimensional, this parameter specifies the name
+            of the space dimension, which is often non-standard (e.g. 'land').
+        model_is_1d: bool, optional
+            Whether the model is one-dimensional.
+        has_data: bool, optional
+            Whether or not the xarray object contains data        
+        """
         self._domain = domain
         super().__init__(
             dataarray,
@@ -272,29 +326,25 @@ class HmSpaceDataArray(HmDataArray):
         ----------
         skip : list
             List of dimension names to skip when performing subset.
-        method : str
-            Method to use for inexact matches (see
-            ``xarray.Dataset.sel`` for more details).
+        method : str, optional
+            Method to use for inexact matches (see ``xarray.Dataset.sel`` for 
+            more details).
         **kwargs : Any
-            Additional keyword arguments to
-            `xarray.Dataset.sel`
+            Additional keyword arguments to `xarray.Dataset.sel`
         """
         self._get_index()
         skip += ['time']
         # skip = skip.append('time')
         # skip.append('time')
         index = {k: v for k, v in self.index.items() if k not in skip}
-        # print(skip)
-        # print(index)
         if all([dim in self._data.coords for dim in self.index]):
             self._data = self._data.sel(index, method=method, **kwargs)
         else:
             self._data = self._data.sel(index)
-        # print("Hello, world")
         self._update_metadata()
 
     def _get_index(self):
-        """Construct index for subsetting based on domain."""
+        # Construct index for subsetting based on domain.
         index_dict = {}
         for dim, dimname in self._dims.items():
             try:
@@ -303,45 +353,42 @@ class HmSpaceDataArray(HmDataArray):
                 pass
         self.index = index_dict
 
-    def load(self):
+    def load(self):        
         """Load data to memory."""
         self._data.load()
         self._in_memory = True
 
     @property
     def values(self):
+        """numpy.array: Array values."""
         # it is a requirement that space dimensions are last - document this (CF Conventions)
-        # return self._data.values[..., self._domain.mask.values]
         if self._model_is_1d:
             return self._data.values[..., self._domain.mask.values]
         else:
             return self._data.values
 
 
-class HmSpaceDataset(object):
-    def __init__(
-            self,
-            dataarray_or_dataset,
-            domain,
-            is_1d=False,
-            xy_dimname=None,
-            model_is_1d=True,
-            has_data=True
-    ):
-        self._domain = domain
-        super().__init__(
-            dataarray_or_dataset,
-            is_1d,
-            xy_dimname,
-            model_is_1d,
-            has_data
-        )
-        self.subset()
-
+# class HmSpaceDataset(object):
+#     def __init__(
+#             self,
+#             dataarray_or_dataset,
+#             domain,
+#             is_1d=False,
+#             xy_dimname=None,
+#             model_is_1d=True,
+#             has_data=True
+#     ):
+#         self._domain = domain
+#         super().__init__(
+#             dataarray_or_dataset,
+#             is_1d,
+#             xy_dimname,
+#             model_is_1d,
+#             has_data
+#         )
+#         self.subset()
 
 class HmSpaceTimeDataArray(HmSpaceDataArray):
-    """Class to represent spatio-temporal data."""
-
     def __init__(
             self,
             dataarray,
@@ -353,29 +400,43 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
             model_is_1d=True,
             has_data=True
     ):
-        """To load data, use the `open_hmdataarray` function.
+        """N-dimensional array with labeled coordinates and dimensions.
 
-        Parameters:
-        -----------
-        dataarray : xarray.DataArray
+        A wrapper for `xarray.DataArray` for spatiotemporal datasets, with some
+        additional methods for efficient subsetting based on the model domain.
+        This would typically be used to represent model driving data (e.g. 
+        meteorological variables).
+
+        To load data, use the `hm.api.open_hmdataset` function.
+
+        Parameters
+        ----------
+        dataarray: xarray.DataArray
+            xarray.DataArray
         nc_dataset : netCDF4.Dataset
-            The netCDF4.Dataset object, providing a
-            lower-level interface to the dataset which
-            returns selected data much faster than comparable
-            operations in xarray. The trade-off is that only
-            exact indices can be used. To overcome this, this
-            hm.HmSpaceTimeDataArray includes a 'ghost'
-            xarray.DataArray object which is for (exact and
-            inexact) indexing. The output of
-            xarray.DataArray.sel is used to find the exact
-            index in the corresponding netCDF4 object.
+            The netCDF4.Dataset object, providing a lower-level interface to the
+            underlying dataset which returns selected data much faster than 
+            comparable operations in xarray. The trade-off is that only exact
+            indices can be used. To overcome this, hm.HmSpaceTimeDataArray 
+            includes a 'ghost' xarray.DataArray object which is used for (exact 
+            and inexact) indexing. The output of xarray.DataArray.sel is used to 
+            find the exact index in the corresponding netCDF4 object.
         variable : str
             Variable name
-        domain : HmDomain
+        domain: hm.HmDomain
             The model domain.
-        is_1d : bool 
-        xy_dimname : str
-        has_data : bool
+        is_1d: bool, optional
+            Whether the dataset has a one-dimensional 
+            representation of space (i.e. a set of points). This 
+            is opposed to a two-dimensional representation which will 
+            have coordinates to identify the location of each point.
+        xy_dimname: str, optional
+            If the dataset is one-dimensional, this parameter specifies the name
+            of the space dimension, which is often non-standard (e.g. 'land').
+        model_is_1d: bool, optional
+            Whether the model is one-dimensional.
+        has_data: bool, optional
+            Whether or not the xarray object contains data        
         """
         super().__init__(
             dataarray,

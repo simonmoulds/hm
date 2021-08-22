@@ -18,8 +18,6 @@ required_config_sections = []
 # TODO: this class needs to be refactored
 
 class Configuration(object):
-    """Model configuration details.
-    """
     def __init__(
             self,
             config_filename,
