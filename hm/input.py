@@ -19,6 +19,31 @@ class HmInputData(object):
             factor=1.,
             offset=0.
     ):
+        """Model input data.
+
+        Parameters
+        ----------
+        model: hm.Model
+            Model object which inherits from `hm.Model`.
+        filename: str
+            Filename of the dataset.
+        nc_varname: str 
+            Variable name in netCDF file.
+        model_varname: str
+            Model variable name.
+        is_1d: bool, optional
+            Whether the dataset has a one-dimensional 
+            representation of space (i.e. a set of points). This 
+            is opposed to a two-dimensional representation which will 
+            have coordinates to identify the location of each point.
+        xy_dimname: str, optional
+            If the dataset is one-dimensional, this parameter specifies the name
+            of the space dimension, which is often non-standard (e.g. 'land').
+        factor: float, optional
+            Factor by which to multiply data values.
+        offset: float, optional
+            Offset to add to data values.
+        """
         self.model = model
         self.filename = filename
         self.nc_varname = nc_varname

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# TODO: inherit from Basic Model Interface
 
 class Model(object):
     def __init__(
@@ -12,6 +13,24 @@ class Model(object):
             init=None,
             **kwargs
     ):
+        """Model.
+        
+        Parameters
+        ----------
+        config: `hm.Configuration`
+            Model configuration.
+        time: `hm.ModelTime`
+            Model time.
+        domain: `hm.HmDomain`
+            Model spatial domain.
+        is_1d: bool
+            Whether the model runs over a one-dimensional 
+            representation of space.
+        init: TODO
+            Initial model state
+        **kwargs: Any
+            Not implemented.
+        """
         self.config = config
         self.time = time
         self.domain = domain

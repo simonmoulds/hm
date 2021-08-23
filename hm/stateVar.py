@@ -22,7 +22,8 @@ def loadObject(name, num):
             return pickle.load(f)
     except FileNotFoundError:
         return 0
-    
+
+# TODO: rename to ModelState
 class stateVar(object):
 
     def __init__(self, dynamicmodel):

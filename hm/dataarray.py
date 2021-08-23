@@ -21,26 +21,7 @@ from .utils import *
 
 
 class HmBaseClass(object):
-    # """Base class for the hm data classes.
-
-    # To load data, use the ``open_hmdataset`` function.
-
-    # dataarray_or_dataset: xarray.Dataset or xarray.DataArray
-    # xarray.Dataset or xarray.DataArray
-    # :param is_1d: Whether the dataset has a one-dimensional 
-    # representation of space (i.e. a set of points). This 
-    # is opposed to a two-dimensional representation which will 
-    # have coordinates to identify the location of each point.
-    # :type is_1d: bool, optional
-    # :param xy_dimname: If the dataset is one-dimensional, this 
-    # parameter specifies the name of the space dimension, which is
-    # often non-standard (e.g. 'land').
-    # :type xy_dimname: str, optional
-    # :param model_is_1d: Whether the model is one-dimensional.
-    # :type model_is_1d: bool, optional
-    # :param has_data: Whether or not the xarray object contains data
-    # :type has_data: bool, optional
-    # """
+    
     def __init__(
             self,
             dataarray_or_dataset,
@@ -49,7 +30,6 @@ class HmBaseClass(object):
             model_is_1d=True,
             has_data=True
     ):
-        """Constructor method."""
         self._data = dataarray_or_dataset
         if is_1d & (xy_dimname not in self._data.dims):
             raise ValueError(
@@ -65,7 +45,7 @@ class HmBaseClass(object):
         self._update_metadata()
 
     def _update_metadata(self):
-        """Extract metadata from xarray dataset."""
+        # Extract metadata from xarray dataset.
         self._dims = get_xr_dimension_names(
             self._data,
             self._is_1d,
@@ -73,9 +53,6 @@ class HmBaseClass(object):
         )
         self._axes = get_xr_dimension_axes(self._data, self._dims)
         self._coords = get_xr_coordinates(self._data, self._dims)
-        # print(self._dims)
-        # print(self._axes)
-        # print(self._coords)
         self._is_1d = ('xy' in self.dims)
         self._is_2d = (
             (not self._is_1d)
@@ -86,11 +63,10 @@ class HmBaseClass(object):
         self._spatial_extent()
 
     def _spatial_extent(self):
-        """Extract spatial extent from data object.
+        # Extract spatial extent from data object.
 
-        Only relevant for two-dimensional datasets; for
-        one-dimensional datasets the extent is None.
-        """
+        # Only relevant for two-dimensional datasets; for
+        # one-dimensional datasets the extent is None.
         if self.is_2d:
             self._extent = get_spatial_extent(self._coords)
         else:
@@ -113,32 +89,32 @@ class HmBaseClass(object):
 
     @property
     def is_1d(self):
-        """Whether the object is one-dimensional."""
+        """bool: Whether the object is one-dimensional."""
         return self._is_1d
 
     @property
     def is_2d(self):
-        """Whether or not the object is two-dimensional."""
+        """bool: Whether or not the object is two-dimensional."""
         return self._is_2d
 
     @property
     def is_spatial(self):
-        """Whether or not the object is spatial."""
+        """bool: Whether or not the object is spatial."""
         return self.is_1d | self.is_2d
 
     @property
     def is_temporal(self):
-        """Whether or not the object is temporal."""
+        """bool: Whether or not the object is temporal."""
         return 'time' in self.dims
 
     @property
     def has_data(self):
-        """Whether or not the object has data."""
+        """bool: Whether or not the object has data."""
         return self._has_data
 
     @property
     def in_memory(self):
-        """Whether or not the data is stored in memory."""
+        """bool: Whether or not the data is stored in memory."""
         return self._in_memory
 
 
@@ -240,6 +216,7 @@ class HmDomain(HmDataset):
         """
         return self._data['mask']
 
+    # TODO: I don't think these time-related properties should be in HmDomain?
     @property
     def starttime(self):
         """pandas.Timestamp: Model start time."""
@@ -300,6 +277,8 @@ class HmSpaceDataArray(HmDataArray):
             Whether the model is one-dimensional.
         has_data: bool, optional
             Whether or not the xarray object contains data        
+        **kwargs : Any
+            Additional keyword arguments to `xarray.Dataset.sel`
         """
         self._domain = domain
         super().__init__(
@@ -515,6 +494,7 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
 
     @property
     def values(self):
+        """numpy.array: Data values."""
         # TODO: make a separate property - e.g. values_masked
         if self._model_is_1d:
             return self._values[..., self._domain.mask.values]
@@ -523,20 +503,26 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
 
     @property
     def nc_time(self):
+        """numpy.array: Dataset time coordinates."""
         return self._nc_coords[self._dims['time']]
 
     @property
     def starttime(self):
+        """pandas.Timestamp: Start time of the dataset."""
         return pd.Timestamp(self._data['time'].values[0])
 
     @property
     def endtime(self):
+        """pandas.Timestamp: End time of the dataset."""
         return pd.Timestamp(self._data['time'].values[-1])
 
     @property
     def n_timestep(self):
+        """int: number of time points in the dataset."""
         return len(self._data['time']) - 1
 
     @property
     def dt(self):
+        """pandas.Timedelta: time between each time point."""
+        # This assumes a consistent timestep
         return (self.endtime - self.starttime) / self.n_timestep

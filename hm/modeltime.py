@@ -16,16 +16,16 @@ class ModelTime(object):
             endtime,
             timedelta
     ):
-        """To create... 
+        """Model time.
 
         Parameters
         ----------
         starttime : pandas.Timestamp
-            The start time of the model simulation
+            Start time of the model simulation.
         endtime : pandas.Timestamp
-            The end time of the simulation
+            End time of the simulation.
         timedelta : pandas.Timedelta
-            The model time step
+            Model time step.
         """
         self._starttime = pd.Timestamp(starttime)
         self._endtime = pd.Timestamp(endtime)
@@ -61,45 +61,60 @@ class ModelTime(object):
 
     @property    
     def starttime(self):
+        """pandas.Timestamp: Model start time."""
         return self._starttime
     
     @property    
     def endtime(self):
+        """pandas.Timestamp: Model end time."""
         return self._endtime
 
     @property
     def dt(self):
+        """pandas.Timedelta: Duration of each timestep."""
         return self._dt
 
     @property
     def times(self):
+        """pandas.DatetimeIndex: Model time points."""
         return self._times
+
+    # TODO: only one of `curr_time` and `timestamp` is needed
     @property    
     def curr_time(self):
+        """pandas.Timestamp: Current model time."""
         return self._curr_time
+    
     @property
     def timestamp(self):
+        """pandas.Timestamp: Current model time."""
         return pd.Timestamp(self._curr_time)
+
+    # TODO: hour/minute/second?
     @property    
     def day(self):
+        """int: Current day of the month."""
         return self._curr_time.day
 
     @property    
+    def month(self):
+        """int: Current month."""
+        return self._curr_time.month
+    
+    @property    
+    def year(self):
+        """int: Current year."""
+        return self._curr_time.year
+
+    @property    
     def doy(self):
+        """int: Current Julian day."""
         return self._curr_time.timetuple().tm_yday
 
     # @property
     # def startTimeDOY(self):
     #     return self._startTime.timetuple().tm_yday
     
-    @property    
-    def month(self):
-        return self._curr_time.month
-    
-    @property    
-    def year(self):
-        return self._curr_time.year
-
     # @property    
     # def timeStepPCR(self):
     #     return self._timeStepPCR
@@ -118,13 +133,15 @@ class ModelTime(object):
     # @property    
     # def nrOfTimeSteps(self):
     #     return self._nrOfTimeSteps
-    
+
+    # TODO: remove?
     @property
-    def fulldate(self):
+    def fulldate(self):        
         return self._fulldate
     
     @property
     def is_leap_year(self):
+        """bool: Whether the current year is a leap year."""
         return self.year % 4 == 0 and (self.year % 100 != 0 or self.year % 400 == 0)
 
     # @property
@@ -154,14 +171,17 @@ class ModelTime(object):
 
     @property
     def is_first_timestep(self):
+        """bool: Whether the current timestep is the first in the simulation."""
         return self.timestep == 1
 
     @property
     def is_first_day_of_month(self):
+        """bool: Whether the current timestep is the first day of the month."""
         return self.day == 1
     
     @property
     def is_first_day_of_year(self):
+        """bool: Whether the current timestep is the first day of the year."""
         return self.doy == 1
 
     def tomorrow(self):
@@ -169,14 +189,17 @@ class ModelTime(object):
 
     @property
     def is_last_day_of_month(self):
+        """bool: Whether the current timestep is the last day of the month."""
         return self.tomorrow().day == 1
 
     @property
     def is_last_day_of_year(self):
+        """bool: Whether the current timestep is the last day of the year."""
         return self.tomorrow().timetuple().tm_yday == 1
 
     @property
     def is_last_timestep(self):
+        """bool: Whether the current timestep is the last in the simulation."""
         return self._curr_time == self._endtime
 
     def yesterday(self):

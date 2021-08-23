@@ -219,11 +219,9 @@ class _netcdf(object):
         self.get_time_axis()
 
     def add_time_dimension(self, ncdf, dimname, **kwargs):
-        """Add time dimension to a netCDF file.
-
-        Time dimension is unlimited so that data can
-        be added during simulation.
-        """
+        # Add time dimension to a netCDF file.
+        # Time dimension is unlimited so that data can
+        # be added during simulation.
         attr = _get_variable_attributes(dimname, self.variable_list)
         ncdf.createDimension(attr.shortname, None)
         var = ncdf.createVariable(
@@ -381,6 +379,23 @@ class ReportingVariable(object):
             freq,
             suffix
     ):
+        """Output variable.
+        
+        Parameters
+        ----------
+        model: `hm.Model`
+            Model. 
+        varname: str
+            Model variable name.
+        sample: int
+            Sample number.
+        variable_list: TODO
+            TODO.
+        freq: str
+            Frequency of output.
+        suffix: str
+            Suffix to add to filename.
+        """
         self.model = model
         self.varname = varname
         self.filename = os.path.join(
@@ -540,6 +555,23 @@ class Reporting(object):
             reporting_options=None,  # not used currently
             run_id=None              # not used currently
     ):
+        """Model output.
+        
+        Parameters
+        ----------
+        model: `hm.Model`
+            Model. 
+        variable_list: TODO
+            TODO.
+        num_samples: int
+            Number of samples in the simulation.
+        config_section: str, optional
+            Name of the configuration section which specifies the model output.
+        reporting_options: Any
+            Not implemented.
+        run_id: str
+            Not implemented.
+        """
         self.model = model
         self.variable_list = variable_list
         self.outdir = self.model.config.output_directory
