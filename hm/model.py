@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# TODO: inherit from Basic Model Interface
-
 class Model(object):
     def __init__(
             self,
@@ -36,6 +34,5 @@ class Model(object):
         self.domain = domain
         self.is_1d = is_1d
         self.init = init
-        # EXPERIMENTAL:
         self.currentSampleNumber = 1
         self.filter_timesteps = []
