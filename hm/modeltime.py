@@ -69,6 +69,21 @@ class ModelTime(object):
         """pandas.Timestamp: Model end time."""
         return self._endtime
 
+    @property    
+    def start_time(self):
+        # NEW
+        return pd.Timestamp(self._starttime)
+
+    @property    
+    def end_time(self):
+        # NEW
+        return pd.Timestamp(self._endttime)
+    
+    @property
+    def time_step(self):
+        # NEW: This should be a pandas.Timedelta object
+        return self._dt
+    
     @property
     def dt(self):
         """pandas.Timedelta: Duration of each timestep."""
@@ -84,6 +99,11 @@ class ModelTime(object):
     def curr_time(self):
         """pandas.Timestamp: Current model time."""
         return self._curr_time
+
+    @property    
+    def current_time(self):
+        # NEW
+        return pd.Timestamp(self._curr_time)
     
     @property
     def timestamp(self):
