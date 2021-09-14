@@ -21,36 +21,36 @@ class DynamicBase(object):
         self.inInitial = False
         self.inDynamic = False
 
-    def setDebug(self):
-        msg = "Class needs to implement 'setDebug' method"
-        raise NotImplementedError(msg)
+    # def setDebug(self):
+    #     msg = "Class needs to implement 'setDebug' method"
+    #     raise NotImplementedError(msg)
 
-    def initial(self):
-        """  """
-        msg = "Class needs to implement 'initial' method"
-        raise NotImplementedError(msg)
+    # def initial(self):
+    #     """  """
+    #     msg = "Class needs to implement 'initial' method"
+    #     raise NotImplementedError(msg)
 
-    def dynamic(self):
-        """  """
-        msg = "Class needs to implement 'dynamic' method"
-        raise NotImplementedError(msg)
+    # def dynamic(self):
+    #     """  """
+    #     msg = "Class needs to implement 'dynamic' method"
+    #     raise NotImplementedError(msg)
 
-    def timeSteps(self):
-        """  """
-        msg = "Class needs to implement 'timeSteps' method"
-        raise NotImplementedError(msg)
+    # def timeSteps(self):
+    #     """  """
+    #     msg = "Class needs to implement 'timeSteps' method"
+    #     raise NotImplementedError(msg)
 
-    def nrTimeSteps(self):
-        """  """
-        msg = "Class needs to implement 'nrTimeSteps' method"
-        raise NotImplementedError(msg)
+    # def nrTimeSteps(self):
+    #     """  """
+    #     msg = "Class needs to implement 'nrTimeSteps' method"
+    #     raise NotImplementedError(msg)
 
-    def firstTimeStep(self):
-        """
-        Return the first timestep that is executed.
-        """
-        msg = "Class needs to implement 'firstTimeStep' method"
-        raise NotImplementedError(msg)
+    # def firstTimeStep(self):
+    #     """
+    #     Return the first timestep that is executed.
+    #     """
+    #     msg = "Class needs to implement 'firstTimeStep' method"
+    #     raise NotImplementedError(msg)
 
     def setQuiet(self, quiet=True):
         """
@@ -75,7 +75,8 @@ class DynamicBase(object):
 
     def _setInDynamic(self, value):
         assert isinstance(value, bool)
-        self.inDynamic = value
+
+       self.inDynamic = value
 
     def _inTimeStep(self):
         """
@@ -133,10 +134,10 @@ class DynamicBase(object):
 
         self._d_nrTimeSteps = lastTimeStep
 
-class DynamicModel(dynamicBase.DynamicBase):
+class DynamicModel(DynamicBase):
 
     def __init__(self):
-        dynamicBase.DynamicBase.__init__(self)
+        DynamicBase.__init__(self)
         self.silentModelOutput = False
 
     def initial(self):
@@ -149,83 +150,25 @@ class DynamicModel(dynamicBase.DynamicBase):
         return self.silentModelOutput
 
     def timeSteps(self):
-        """
-        Return a list of time steps configured
-        """
         return range(self.firstTimeStep(), self.nrTimeSteps() + 1)
 
     def nrTimeSteps(self):
-        """
-        Return the number of time steps
-        """
         assert self._d_nrTimeSteps
         return self._d_nrTimeSteps
 
     def currentTimeStep(self):
-        """
-        Return the current time step in the range from firstTimeStep to nrTimeSteps.
-        """
         assert self.currentStep >= 0
         return self.currentStep
 
     def firstTimeStep(self):
-        """
-        Return first timestep of a model.
-        """
         assert self._d_firstTimeStep
         return self._d_firstTimeStep
 
-    def report(self, variable, name):
-        """
-        Storing map data to disk
-        
-        `variable`
-        Variable containing the PCRaster map data
-
-        `name`
-        Name used as filename. Use a filename with less than eight
-        characters and without extension. File extension for dynamic models
-        is ".map" in the initial section and the 8.3 style format name in
-        the dynamic section. File extensions will be appended automatically.
-        """
-        self._reportNew(variable, name)
-
-    def readmap(self, name, style=1):
-        """
-        Read map data from disk.
-        
-        `name`
-        Name used as filename. Use filename with less than eight characters
-        and without extension. File extension for dynamic models is ".map"
-        in initial section and the 8.3 style format name in the dynamic
-        section. File extensions will be appended automatically.
-        
-        .. todo::
-
-        `style` argument is not used.
-        """
-        return self._readmapNew(name)
-
     def _setNrTimeSteps(self, timeSteps):
-        """
-        Configure the number of time steps.
-        
-        In addition to the setting the number of timesteps we need to pass
-        the value to the PCRaster runtime engine.
-        """
-        dynamicBase.DynamicBase._setNrTimeSteps(self, timeSteps)
-
-        # pcr._rte().setNrTimeSteps(timeSteps)
+        DynamicBase._setNrTimeSteps(self, timeSteps)
 
     def _setCurrentTimeStep(self, step):
-        """
-        Set the current time step.
-        
-        In addition to the setting the current timestep within the framework,
-        we need to pass the value to the PCRaster runtime engine.
-        """
-        dynamicBase.DynamicBase._setCurrentTimeStep(self, step)
-        # pcr._rte().setCurrentTimeStep(step)
+        DynamicBase._setCurrentTimeStep(self, step)
 
 class HmDynamicBase2(Bmi):
 
