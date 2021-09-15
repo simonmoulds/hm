@@ -7,7 +7,9 @@ from .pcraster.dynamicPCRasterBase import DynamicModel
 from .pcraster.mcPCRasterBase import MonteCarloModel
 from .pcraster.kfPCRasterBase import EnKfModel
 
-from bmipy import bmi
+from bmipy import Bmi
+from typing import Tuple
+import numpy as np
 
 class DynamicBase(object):
     def __init__(self):
@@ -76,7 +78,7 @@ class DynamicBase(object):
     def _setInDynamic(self, value):
         assert isinstance(value, bool)
 
-       self.inDynamic = value
+        self.inDynamic = value
 
     def _inTimeStep(self):
         """
