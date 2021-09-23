@@ -8,12 +8,11 @@ import sys
 
 # TODO: Remove this error class
 class FrameworkError(Exception):
-  def __init__(self,
-    msg):
-    self._msg = msg
+    def __init__(self, msg):
+        self._msg = msg
 
-  def __str__(self):
-    return self._msg
+    def __str__(self):
+        return self._msg
 
 
 # TODO look up the atexit module
@@ -23,8 +22,7 @@ class FrameworkError(Exception):
 
 
 class FrameworkBase(object):
-    """
-    Base class for frameworks.
+    """Base class for frameworks.
 
     Basically contains things for logging...
     """

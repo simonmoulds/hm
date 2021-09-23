@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 # from .pcraster.dynamicFramework import DynamicFramework
-from .pcraster.mcFramework import MonteCarloFramework
-from .pcraster.kalmanFilterFramework import EnsKalmanFilterFramework
+from .frameworkbase import FrameworkBase
+from .montecarloframework import MonteCarloFramework
+# from .pcraster.mcFramework import MonteCarloFramework
+# from .pcraster.kalmanFilterFramework import EnsKalmanFilterFramework
 
 class DynamicFramework(FrameworkBase):
-    """
-    Framework class for dynamic models.
+    """Framework class for dynamic models.
 
     `userModel`
       Instance that models the :ref:`Dynamic Model Concept <dynamicModelConcept>`.
@@ -18,11 +19,7 @@ class DynamicFramework(FrameworkBase):
     `firstTimestep`
       Sets the starting timestep of the model (optional, default is 1).
     """
-
-    def __init__(self,
-                 userModel,
-                 lastTimeStep=0,
-                 firstTimestep=1):
+    def __init__(self, userModel, lastTimeStep=0, firstTimestep=1):
 
         FrameworkBase.__init__(self)
         self._d_model = userModel

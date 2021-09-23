@@ -7,9 +7,8 @@ import time
 import multiprocessing
 # from . import dynamicFramework
 # from . import staticFramework
-from . import forkscript
-from . import frameworkbase
-
+from .forkscript import ForkScript
+from .frameworkbase import FrameworkBase
 
 class MonteCarloBase(object):
     def __init__(self):
@@ -75,7 +74,7 @@ class MonteCarloBase(object):
         return self._d_inSample
 
 
-class MonteCarloFramework(frameworkbase.FrameworkBase, forkscript.ForkScript):
+class MonteCarloFramework(FrameworkBase, ForkScript):
     """
     Framework class for the Monte Carlo method.
 
@@ -88,7 +87,6 @@ class MonteCarloFramework(frameworkbase.FrameworkBase, forkscript.ForkScript):
     `remove_dirs`
       Flag whether sample directories should be removed
     """
-
     def __init__(self,
                  userModel,
                  nrSamples=0,
@@ -187,58 +185,120 @@ class MonteCarloFramework(frameworkbase.FrameworkBase, forkscript.ForkScript):
     #
     # Runs the user model in the Monte Carlo mode.
     def run(self, premc=True, postmc=True):
-        # TODO: implement this from pcraster file
+        self._atStartOfScript()
+        self._check()
+        if premc:
+            self._runPremcloop()
 
+        sample = self._userModel()._firstSampleNumber()
+        while sample <= self._userModel()._lastSampleNumber():
+
+            if self._forkSamples():
+                assert self.isParentProcess()
+                while self._systemIsOccupied(self.nrChildProcesses()):
+                    if self._debug():
+                        self.showMessage("System is occupied")
+                    # Wait for some seconds.
+                    # But first handle finished children.
+                    for childProcess in self.handleFinishedChildProcesses():
+                        if not self._quiet():
+                            if self._debug():
+                                self.showMessage(childProcess.message())
+                    time.sleep(0.1)
+
+                # Throw in another sample.
+                if self._debug():
+                    self.showMessage("Starting sample %d" % (sample))
+                self.fork(str(sample))
+
+                if self.isParentProcess():
+                    # Stop parent process to enable child process to start and
+                    # the load to adjust.
+                    # But first handle finished children.
+                    for childProcess in self.handleFinishedChildProcesses():
+                        if not self._quiet():
+                            if self._debug():
+                                self.showMessage(childProcess.message())
+                    time.sleep(0.01)
+
+            # Child processes start here.
+            if not self._forkSamples() or \
+               (self._forkSamples() and self.isChildProcess()):
+                self._incrementIndentLevel()
+                self._atStartOfSample(sample)
+                self._userModel()._setCurrentSample(sample)
+                # Execute model
+                self._d_model.run()
+
+                self._sampleFinished()
+                self._decrementIndentLevel()
+
+            # Child processes stop here.
+            if self._forkSamples():
+                if self.isChildProcess():
+                    os._exit(0)
+
+            assert not self._forkSamples() or self.isParentProcess()
+            sample += 1
+
+        if self._forkSamples() and  self.isParentProcess():
+            for childProcess in self.waitForChildProcessesToFinish():
+                if not self._quiet():
+                    if self._debug():
+                        self.showMessage(childProcess.message())
+              assert not self.childProcesses()
+
+        if postmc:
+            self._runPostmcloop()
+
+        return 0
 
     ## \brief Creates the directories in which the sample data can be stored.
     #
     # \attention Already existing sample directories will be cleaned!
     def _initialiseSampleDirectories(self, remove_sample_dirs):
-      sample = self._userModel()._firstSampleNumber()
-      while sample <= self._userModel()._lastSampleNumber():
-        dirname = '{}'.format(sample)
+        sample = self._userModel()._firstSampleNumber()
+        while sample <= self._userModel()._lastSampleNumber():
+            dirname = '{}'.format(sample)
+            if not os.path.exists(dirname):
+                # Create sample directory.
+                os.mkdir(dirname)
+            elif remove_sample_dirs == True:
+                if not os.path.isdir(dirname):
+                    # Remove existing file with name of sample directory.
+                    os.remove(dirname)
+                    os.mkdir(dirname)
+                else:
+                    # remove existing and create emtpy directories
+                    shutil.rmtree(dirname)
+                    os.mkdir(dirname)
 
-        if not os.path.exists(dirname):
-          # Create sample directory.
-          os.mkdir(dirname)
-        elif remove_sample_dirs == True:
-          if not os.path.isdir(dirname):
-            # Remove existing file with name of sample directory.
-            os.remove(dirname)
-            os.mkdir(dirname)
-          else:
-            # remove existing and create emtpy directories
-            shutil.rmtree(dirname)
-            os.mkdir(dirname)
-
-        assert os.path.exists(dirname) and os.path.isdir(dirname)
-        sample += 1
-
+            assert os.path.exists(dirname) and os.path.isdir(dirname)
+            sample += 1
 
     def _setSampleNumbers(self, firstSampleNumber, lastSampleNumber):
-      assert firstSampleNumber > 0
-      if lastSampleNumber <= 0:
-        msg = "number of samples argument (%s) of MonteCarloFramework must be > 0" % (lastSampleNumber)
-        raise AttributeError(msg)
-      assert lastSampleNumber >= firstSampleNumber
-
-      self._userModel()._d_firstSampleNumber = firstSampleNumber
-      self._userModel()._d_lastSampleNumber = lastSampleNumber
+        assert firstSampleNumber > 0
+        if lastSampleNumber <= 0:
+            msg = "number of samples argument (%s) of MonteCarloFramework must be > 0" % (lastSampleNumber)
+            raise AttributeError(msg)
+        assert lastSampleNumber >= firstSampleNumber
+        self._userModel()._d_firstSampleNumber = firstSampleNumber
+        self._userModel()._d_lastSampleNumber = lastSampleNumber
 
     ## \brief Returns true if new processes can be forked
     def _systemIsOccupied(self, nrChilds):
-      return nrChilds >= self._d_nrProcessors
+        return nrChilds >= self._d_nrProcessors
 
     ## Checks the current configuration of the script.
     def _check(self):
-      if self._userModel().nrSamples() == 0:
-        self.showWarning("""
-     Since the number of samples to execute is 0, only the premcloop
-     and the postmcloop functions will be executed. Any script that does
-     something meaningful needs to calculate at least one "sample".""")
+        if self._userModel().nrSamples() == 0:
+          self.showWarning(
+              """Since the number of samples to execute is 0, only the premcloop
+              and the postmcloop functions will be executed. Any script that does
+              something meaningful needs to calculate at least one "sample".
+              """
+          )
 
     def setQuiet(self, quiet=True):
-      """
-      Disables the progress display of sample numbers.
-      """
-      self._d_quietProgressSampleNr = quiet
+        """Disables the progress display of sample numbers."""
+        self._d_quietProgressSampleNr = quiet
