@@ -7,8 +7,8 @@ import time
 import multiprocessing
 # from . import dynamicFramework
 # from . import staticFramework
-from .forkscript import ForkScript
-from .frameworkbase import FrameworkBase
+from . import forkscript
+from . import frameworkbase
 
 class MonteCarloBase(object):
     def __init__(self):
@@ -74,7 +74,7 @@ class MonteCarloBase(object):
         return self._d_inSample
 
 
-class MonteCarloFramework(FrameworkBase, ForkScript):
+class MonteCarloFramework(frameworkbase.FrameworkBase, forkscript.ForkScript):
     """
     Framework class for the Monte Carlo method.
 
@@ -91,9 +91,8 @@ class MonteCarloFramework(FrameworkBase, ForkScript):
                  userModel,
                  nrSamples=0,
                  remove_dirs=True):
-                 frameworkbase.FrameworkBase.__init__(self)
-                 forkscript.ForkScript.__init__(self)
-
+        frameworkbase.FrameworkBase.__init__(self)
+        forkscript.ForkScript.__init__(self)
         self._d_model = userModel
         self._testRequirements()
 
@@ -246,7 +245,7 @@ class MonteCarloFramework(FrameworkBase, ForkScript):
                 if not self._quiet():
                     if self._debug():
                         self.showMessage(childProcess.message())
-              assert not self.childProcesses()
+            assert not self.childProcesses()
 
         if postmc:
             self._runPostmcloop()

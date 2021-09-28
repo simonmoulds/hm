@@ -8,7 +8,6 @@ import os.path
 import time
 import traceback
 import weakref
-from . import shellscript
 
 # TODO: Remove this error class
 class FrameworkError(Exception):
@@ -274,7 +273,7 @@ class ShellScript(object):
     #     print("deprecated, update your script")
     #     self.showError(msg)
 
-class FrameworkBase(shellscript.ShellScript):
+class FrameworkBase(ShellScript):
     """Base class for frameworks.
 
     Basically contains things for logging...

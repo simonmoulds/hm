@@ -4,6 +4,7 @@
 # from .pcraster.dynamicFramework import DynamicFramework
 from .frameworkbase import FrameworkBase
 from .montecarloframework import MonteCarloFramework
+from .kalmanfilterframework import EnsKalmanFilterFramework
 # from .pcraster.mcFramework import MonteCarloFramework
 # from .pcraster.kalmanFilterFramework import EnsKalmanFilterFramework
 
