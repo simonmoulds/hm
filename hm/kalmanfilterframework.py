@@ -13,6 +13,7 @@ from . import frameworkbase
 # from . import montecarloframework
 # from .frameworkbase import generateNameT#, generateNameS, generateNameST
 
+# NOT USED
 # class EnKfBase(object):
 #     def __init__(self):
 #         if self.__class__ is EnKfBase:
