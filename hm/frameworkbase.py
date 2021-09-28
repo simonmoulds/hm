@@ -4,7 +4,7 @@
 # import os
 # import re
 import sys
-# import weakref
+import weakref
 
 # TODO: Remove this error class
 class FrameworkError(Exception):
@@ -14,6 +14,42 @@ class FrameworkError(Exception):
     def __str__(self):
         return self._msg
 
+class WeakCallback (object):
+    """A Weak Callback object that will keep a reference to
+    the connecting object with weakref semantics.
+
+    This allows object A to pass a callback method to object S,
+    without object S keeping A alive.
+    """
+    def __init__(self, mcallback):
+        """Create a new Weak Callback calling the method @mcallback"""
+        if sys.version_info.major == 2:
+            obj = mcallback.im_self
+            attr = mcallback.im_func.__name__
+        else:
+            obj = mcallback.__self__
+            attr = mcallback.__func__.__name__
+
+        self.wref = weakref.ref(obj, self.object_deleted)
+        self.callback_attr = attr
+
+    def __call__(self, *args, **kwargs):
+        obj = self.wref()
+        if obj:
+            attr = getattr(obj, self.callback_attr)
+            result = attr(*args, **kwargs)
+        else:
+            result = self.default_callback(*args, **kwargs)
+        return result
+
+    def default_callback(self, *args, **kwargs):
+        """Called instead of callback when expired"""
+        assert False
+        # pass
+
+    def object_deleted(self, wref):
+        """Called when callback expires"""
+        pass
 
 # TODO look up the atexit module
 # @atexit.register
@@ -56,19 +92,16 @@ class FrameworkBase(object):
     def _silentModelOutput(self):
         return self._d_silentModelOutput
 
-    # def _addMethodToClass(self, func):
-    #     # NO! This will create a circular reference between the user model and the
-    #     # framework class. Both will never be deleted because the reference counts
-    #     # will never drop to zero.
-    #     # setattr(self._userModel(), func.__name__, func)
+    # TODO: remove
+    def _addMethodToClass(self, func):
+        # Use a weak reference to the framework class. This assumes that the
+        # framework class will be alive for as long as the user model is used.
+        call_back = WeakCallback(func)
+        setattr(self._userModel(), func.__name__, call_back)
 
-    #     # Use a weak reference to the framework class. This assumes that the
-    #     # framework class will be alive for as long as the user model is used.
-    #     call_back = WeakCallback(func)
-    #     setattr(self._userModel(), func.__name__, call_back)
-
-    # def _addAttributeToClass(self, attr, value):
-    #     setattr(self._userModel(), attr, value)
+    # TODO: remove
+    def _addAttributeToClass(self, attr, value):
+        setattr(self._userModel(), attr, value)
 
     def _atStartOfTimeStep(self, step):
         self._userModel()._setInTimeStep(True)

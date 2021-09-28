@@ -132,7 +132,7 @@ class MonteCarloFramework(FrameworkBase, ForkScript):
         .. todo::
            Default nrCPUs should be <= 0. The user may want to use only 1 CPU
         """
-        if (sys.platform == "win32"):
+        if sys.platform == "win32":
             self.showWarning("Forking not available on Windows platforms")
             self._d_nrProcessors = 1
             self._d_forkSamples = False
