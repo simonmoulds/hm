@@ -3,9 +3,11 @@
 
 from .reporting import Reporting, DummyReporting
 from .stateVar import stateVar
-from .pcraster.dynamicPCRasterBase import DynamicModel
-from .pcraster.mcPCRasterBase import MonteCarloModel
-from .pcraster.kfPCRasterBase import EnKfModel
+# from .pcraster.dynamicPCRasterBase import DynamicModel
+# from .pcraster.mcPCRasterBase import MonteCarloModel
+# from .pcraster.kfPCRasterBase import EnKfModel
+from .montecarloframework import MonteCarloModel
+from .kalmanfilterframework import EnKfModel
 
 from bmipy import Bmi
 from typing import Tuple
@@ -206,15 +208,26 @@ class HmDynamicBase2(Bmi):
         self.is_deterministic = False
         # self.apply_kalman_filter = False
         # self.apply_particle_filter = False
-            
+
+        # This section copied from pcraster.DynamicBase:
+        # if self.__class__ is DynamicBase:
+        #     raise NotImplementedError
+        self._d_nrTimeSteps = 0
+        self.currentStep = 0
+        self._d_firstTimeStep = 1
+        self.inTimeStep = False
+        self.inInitial = False
+        self.inDynamic = False
+
     def initiate_reporting(self, num_samples=1):
         if self.config.REPORTING['report'] == True:
             self.reporting = Reporting(self.model, self.variable_list, num_samples)
         else:
             self.reporting = DummyReporting()
 
-    # def currentSampleNumber(self):
-    #     return 1
+    def currentSampleNumber(self):
+        return 1
+
     def initialize(self):
         self.model.currentSampleNumber = self.currentSampleNumber()        
         self.model.time.reset()
@@ -228,8 +241,121 @@ class HmDynamicBase2(Bmi):
         self.stateVar_module.dynamic()
         self.reporting.dynamic(self.currentSampleNumber())
 
-    # Now implement all the other methods specified by the Bmi class
-    
+    # Methods specified by pcraster.DynamicBase class:
+    def setQuiet(self, quiet=True):
+        """Disables the progress display of timesteps."""
+        self.silentModelOutput = quiet
+
+    # THIS METHOD IMPLEMENTED BELOW
+    # def currentTimeStep(self):
+    #     """  """
+    #     msg = "Class needs to implement 'currentTimeStep' method"
+    #     raise NotImplementedError(msg)
+
+    def _inDynamic(self):
+        return self.inDynamic
+
+    def _inInitial(self):
+        return self.inInitial
+
+    def _setInInitial(self, value):
+        assert isinstance(value, bool)
+        self.inInitial = value
+
+    def _setInDynamic(self, value):
+        assert isinstance(value, bool)
+
+        self.inDynamic = value
+
+    def _inTimeStep(self):
+        """Returns whether a time step is currently executing."""
+        #if hasattr(self._userModel(), "_d_inTimeStep"):
+        #  return self._userModel()._d_inTimeStep
+        #else:
+        #  return False
+        return self.inTimeStep
+
+    def _setInTimeStep(self, value):
+        assert isinstance(value, bool)
+        self.inTimeStep = value
+
+    def _setFirstTimeStep(self, firstTimeStep):
+
+        if not isinstance(firstTimeStep, int):
+            msg = "first timestep argument (%s) of DynamicFramework must be of type int" % (type(firstTimeStep))
+            raise AttributeError(msg)
+
+        if firstTimeStep <= 0:
+            msg = "first timestep argument (%s) of DynamicFramework must be > 0" % (firstTimeStep)
+            raise AttributeError(msg)
+
+        if firstTimeStep > self.nrTimeSteps():
+            msg = "first timestep argument (%s) of DynamicFramework must be smaller than given last timestep (%s)" % (firstTimeStep, self.nrTimeSteps())
+            raise AttributeError(msg)
+
+        self._d_firstTimeStep = firstTimeStep
+
+    def _setCurrentTimeStep(self, step):
+
+        if step <= 0:
+            msg = "Current timestep must be > 0"
+            raise AttributeError(msg)
+
+        if step > self.nrTimeSteps():
+            msg = "Current timestep must be <= %d (nrTimeSteps)"
+            raise AttributeError(msg)
+
+        self.currentStep = step
+
+    def _setNrTimeSteps(self, lastTimeStep):
+        """Set the number of time steps to run."""
+        if not isinstance(lastTimeStep, int):
+            msg = "last timestep argument (%s) of DynamicFramework must be of type int" % (type(lastTimeStep))
+            raise AttributeError(msg)
+
+        if lastTimeStep <= 0:
+            msg = "last timestep argument (%s) of DynamicFramework must be > 0" % (lastTimeStep)
+            raise AttributeError(msg)
+
+        self._d_nrTimeSteps = lastTimeStep
+
+    # Methods specified by pcraster.DynamicModel class:
+
+    # def __init__(self):
+    #     DynamicBase.__init__(self)
+    #     self.silentModelOutput = False
+    def initial(self):
+        print("Implement 'initial' method")
+
+    def dynamic(self):
+        print("Implement 'dynamic' method")
+
+    def _silentModelOutput(self):
+        return self.silentModelOutput
+
+    def timeSteps(self):
+        return range(self.firstTimeStep(), self.nrTimeSteps() + 1)
+
+    def nrTimeSteps(self):
+        assert self._d_nrTimeSteps
+        return self._d_nrTimeSteps
+
+    def currentTimeStep(self):
+        assert self.currentStep >= 0
+        return self.currentStep
+
+    def firstTimeStep(self):
+        assert self._d_firstTimeStep
+        return self._d_firstTimeStep
+
+    # def _setNrTimeSteps(self, timeSteps):
+    #     DynamicBase._setNrTimeSteps(self, timeSteps)
+
+    # def _setCurrentTimeStep(self, step):
+    #     DynamicBase._setCurrentTimeStep(self, step)
+
+    # Methods specified by Bmi class:
+
     def update_until(self, time: float) -> None:
         # make sure that requested end time is after now
         if time < self.current_time.timestamp():
@@ -254,7 +380,7 @@ class HmDynamicBase2(Bmi):
         loop. This typically includes deallocating memory, closing files and
         printing reports.
         """
-        pass                    # TODO
+        pass
 
     def get_component_name(self) -> str:
         """Name of the component.
@@ -306,7 +432,7 @@ class HmDynamicBase2(Bmi):
 
         Standard Names do not have to be used within the model.
         """
-        return tuple(str(var.standard_name for var in self.IO.inputs))
+        return tuple(str(var.standard_name) for var in self.IO.inputs)
 
     def get_output_var_names(self) -> Tuple[str]:
         """List of a model's output variables.
@@ -479,7 +605,7 @@ class HmDynamicBase2(Bmi):
         float
             The maximum model time.
         """
-        return self.model.time.endt_time
+        return self.model.time.end_time
 
     def get_time_units(self) -> str:
         """Time units of the model.
