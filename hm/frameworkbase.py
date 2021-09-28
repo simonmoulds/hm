@@ -5,6 +5,7 @@
 # import re
 import sys
 import weakref
+from . import shellscript
 
 # TODO: Remove this error class
 class FrameworkError(Exception):
@@ -57,7 +58,7 @@ class WeakCallback (object):
 #   print
 
 
-class FrameworkBase(object):
+class FrameworkBase(shellscript.ShellScript):
     """Base class for frameworks.
 
     Basically contains things for logging...

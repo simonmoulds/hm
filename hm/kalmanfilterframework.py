@@ -10,30 +10,49 @@ import pickle
 from numpy import linalg
 # from . import dynamicframework
 from . import frameworkbase
-# from . import montecarloframework
+from . import montecarloframework
 # from .frameworkbase import generateNameT#, generateNameS, generateNameST
 
-# NOT USED
-# class EnKfBase(object):
-#     def __init__(self):
-#         if self.__class__ is EnKfBase:
-#             raise NotImplementedError
+class EnKfBase(object):
+    def __init__(self):
+        if self.__class__ is EnKfBase:
+            raise NotImplementedError
 
-#     def initial(self):
-#         msg = "Class needs to implement 'initial' method"
-#         raise NotImplementedError(msg)
+    def initial(self):
+        msg = "Class needs to implement 'initial' method"
+        raise NotImplementedError(msg)
 
-#     def setDebug(self):
-#         msg = "Class needs to implement 'setDebug' method"
-#         raise NotImplementedError(msg)
+    def setDebug(self):
+        msg = "Class needs to implement 'setDebug' method"
+        raise NotImplementedError(msg)
 
-#     def setState(self):
-#         msg = "Class needs to implement 'setState' method"
-#         raise NotImplementedError(msg)
+    def setState(self):
+        msg = "Class needs to implement 'setState' method"
+        raise NotImplementedError(msg)
 
-#     def setObservations(self):
-#         msg = "Class needs to implement 'setObservations' method"
-#         raise NotImplementedError(msg)
+    def setObservations(self):
+        msg = "Class needs to implement 'setObservations' method"
+        raise NotImplementedError(msg)
+
+
+class EnKfModel(EnKfBase):
+    def __init__(self):
+        EnKfBase.__init__(self)
+    ## \brief Storing map data to disk.
+    #
+    # \param variable object containing the PCRaster map data
+    # \param name name used as filename. Use filename without extension. File extension for deterministic
+    # static models is ".map" and will be appended automatically.
+    def report(self, variable, name, style=1):
+        self._reportNew(variable, name)
+
+    ## \brief Reads map data from disk.
+    #
+    # \param name name used as filename. Use filename without extension. File extension for deterministic
+    # static models is ".map" and will be appended automatically.
+    def readmap(self, name, style=1):
+        return self._readmapNew(name)
+
 
 class EnsKalmanFilterFramework(frameworkbase.FrameworkBase):
     def __init__(self, userModel):
@@ -42,7 +61,6 @@ class EnsKalmanFilterFramework(frameworkbase.FrameworkBase):
         self._testRequirements()
         self._d_totalTimesteps = self._userModel().nrTimeSteps()
         self._d_trackCloned = {}
-
         # adding framework specific attributes and methods
         self._addAttributeToClass("_d_filterPeriod", 0)
         self._addAttributeToClass("_d_inFilterPeriod", False)
@@ -88,7 +106,7 @@ class EnsKalmanFilterFramework(frameworkbase.FrameworkBase):
         file.close()
 
     def _testRequirements(self):
-        if not isinstance(self._d_model, mcFramework.MonteCarloFramework):
+        if not isinstance(self._d_model, montecarloframework.MonteCarloFramework):
             self.showError("Model must be instance of MonteCarloFramework.")
             sys.exit()
 
