@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+git_hash = 'https://github.com/simonmoulds/hm'
+
 # ######################################################## #
 # constants for input netCDF files                         #
 # ######################################################## #

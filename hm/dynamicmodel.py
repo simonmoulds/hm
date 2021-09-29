@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import numpy as np
+from bmipy import Bmi
+from typing import Tuple
+from timeit import default_timer as timer
+
 from .reporting import Reporting, DummyReporting
 from .stateVar import stateVar
 # from .pcraster.dynamicPCRasterBase import DynamicModel
@@ -8,11 +13,9 @@ from .stateVar import stateVar
 # from .pcraster.kfPCRasterBase import EnKfModel
 from .montecarloframework import MonteCarloModel
 from .kalmanfilterframework import EnKfModel
+from .constants import git_hash
 
-from bmipy import Bmi
-from typing import Tuple
-import numpy as np
-
+# This class is adapted from pcraster python framework
 class DynamicBase(object):
     def __init__(self):
         if self.__class__ is DynamicBase:
@@ -57,13 +60,10 @@ class DynamicBase(object):
     #     raise NotImplementedError(msg)
 
     def setQuiet(self, quiet=True):
-        """
-        Disables the progress display of timesteps.
-        """
+        """Disables the progress display of timesteps."""
         self.silentModelOutput = quiet
 
     def currentTimeStep(self):
-        """  """
         msg = "Class needs to implement 'currentTimeStep' method"
         raise NotImplementedError(msg)
 
@@ -83,13 +83,7 @@ class DynamicBase(object):
         self.inDynamic = value
 
     def _inTimeStep(self):
-        """
-        Returns whether a time step is currently executing.
-        """
-        #if hasattr(self._userModel(), "_d_inTimeStep"):
-        #  return self._userModel()._d_inTimeStep
-        #else:
-        #  return False
+        """Whether or not a time step is currently executing."""
         return self.inTimeStep
 
     def _setInTimeStep(self, value):
@@ -97,45 +91,34 @@ class DynamicBase(object):
         self.inTimeStep = value
 
     def _setFirstTimeStep(self, firstTimeStep):
-
         if not isinstance(firstTimeStep, int):
             msg = "first timestep argument (%s) of DynamicFramework must be of type int" % (type(firstTimeStep))
             raise AttributeError(msg)
-
         if firstTimeStep <= 0:
             msg = "first timestep argument (%s) of DynamicFramework must be > 0" % (firstTimeStep)
             raise AttributeError(msg)
-
         if firstTimeStep > self.nrTimeSteps():
             msg = "first timestep argument (%s) of DynamicFramework must be smaller than given last timestep (%s)" % (firstTimeStep, self.nrTimeSteps())
             raise AttributeError(msg)
-
         self._d_firstTimeStep = firstTimeStep
 
     def _setCurrentTimeStep(self, step):
-
         if step <= 0:
             msg = "Current timestep must be > 0"
             raise AttributeError(msg)
-
         if step > self.nrTimeSteps():
             msg = "Current timestep must be <= %d (nrTimeSteps)"
             raise AttributeError(msg)
-
         self.currentStep = step
 
     def _setNrTimeSteps(self, lastTimeStep):
-        """
-        Set the number of time steps to run.
-        """
+        """Set the number of time steps to run."""
         if not isinstance(lastTimeStep, int):
             msg = "last timestep argument (%s) of DynamicFramework must be of type int" % (type(lastTimeStep))
             raise AttributeError(msg)
-
         if lastTimeStep <= 0:
             msg = "last timestep argument (%s) of DynamicFramework must be > 0" % (lastTimeStep)
             raise AttributeError(msg)
-
         self._d_nrTimeSteps = lastTimeStep
 
 class DynamicModel(DynamicBase):
@@ -254,7 +237,7 @@ class HmDynamicBase2(DynamicModel, Bmi):
     # TODO check that docstrings are correctly inherited
     def update_until(self, time: float) -> None:
         # make sure that requested end time is after now
-        if time < self.current_time.timestamp():
+        if time < self.get_current_time():
             logging.error('`time` is prior to current model time. Please choose a new `time` and try again.')
             return
         # perform timesteps until time
@@ -274,8 +257,8 @@ class HmDynamicBase2(DynamicModel, Bmi):
         pass
 
     def get_component_name(self) -> str:
-        # """Name of the component.
-        return f'hm ({self.git_hash})'  # TODO: git_hash
+        # Name of the component.
+        return f'hm ({git_hash})'
 
     def get_input_item_count(self) -> int:
         # """Count of a model's input variables.
