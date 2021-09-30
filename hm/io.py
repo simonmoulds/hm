@@ -21,11 +21,23 @@ class Variable:
         self.units: str = units
 
 class IO:
-    """Tracks supported model input and output variables."""
+    """Register of model input and output variables."""
     FLOAT = 'float'
     FLOAT64 = 8
     STATE = 'state'
     GRID = 'grid'
+
+    def __init__(self):
+        self.inputs: List[Variable] = []
+        self.outputs: List[Variable] = []
+
+    def add_output_variable(self, **kwargs):
+        self.outputs.append(Variable(**kwargs))
+
+    def add_input_variable(self, **kwargs):
+        self.inputs.append(Variable(**kwargs))
+
+
     # inputs: List[Variable] = [
     #     Variable(
     #         standard_name='surface_runoff_flux',
@@ -103,13 +115,3 @@ class IO:
     #         units='m3'
     #     ),
     # ]
-
-    def __init__(self):
-        self.outputs: List[Variable] = []
-        self.inputs: List[Variable] = []
-
-    def add_output_variable(self, **kwargs):
-        self.outputs.append(Variable(**kwargs))
-
-    def add_input_variable(self, **kwargs):
-        self.inputs.append(Variable(**kwargs))
