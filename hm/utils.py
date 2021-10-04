@@ -237,7 +237,7 @@ def decode_nc_times(timevar):
     except AttributeError:
         calendar = 'standard'
     times = nc.num2date(timevar[:], timevar.units, calendar)
-    return np.array(times, dtype='datetime64[D]')
+    return np.array(times, dtype='datetime64[s]')
 
 
 def get_nc_coordinates(dataset, dimnames):
@@ -250,10 +250,22 @@ def get_nc_coordinates(dataset, dimnames):
                 file_coord = []
                 for i, _ in enumerate(dataset):
                     # TODO: check assumption that files are ordered by times
-                    times = decode_nc_times(dataset[i].variables[dimname])
+                    # times = decode_nc_times(dataset[i].variables[dim])
+                    try:
+                        timevals = dataset[i].variables[dimname]
+                    except KeyError:
+                        timevars = [var for var in dataset[i].variables.keys() if var in allowed_t_dim_names]
+                        if len(timevars) == 1:
+                            timevar = timevars[0]
+                            timevals = dataset[i].variables[timevar]
+                        else:
+                            raise ValueError
+
+                    times = decode_nc_times(timevals)
                     time_coord.append(times)
                     file_coord.append(
-                        np.array([i] * len(times), dtype=np.int32))
+                        np.array([i] * len(times), dtype=np.int32)
+                    )
                     index_coord.append(np.arange(len(times)))
                 coords[dim] = np.concatenate(time_coord)
                 coords['_file'] = np.concatenate(file_coord)

@@ -286,8 +286,9 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
 
 def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
     filename_list = _get_filename_list(filename_or_obj, domain, sample)
-    if len(filename_list) > 1:
-        kwargs['combine'] = 'by_coords'
+    kwargs['combine'] = 'by_coords'
+    # if len(filename_list) > 1:
+    #     kwargs['combine'] = 'by_coords'
     try:
         ds = xr.open_mfdataset(filename_list, **kwargs)
     except ValueError:
@@ -306,10 +307,12 @@ def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
         if len(timevars) == 1:
             timevar = timevars[0]
             time = ds[timevar]
-            timenum = np.array(
-                nc.num2date(time.values, time.units),
-                dtype='datetime64'
-            )
+            time_cftime = nc.num2date(time.values, time.units)
+            timenum = np.array([np.datetime64(tm) for tm in time_cftime])
+            # timenum = np.array(
+            #     nc.num2date(time.values, time.units),
+            #     dtype='datetime64'
+            # )
             ds.update(xr.Dataset({timedim: timenum}))
         else:
             raise ValueError

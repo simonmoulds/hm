@@ -504,7 +504,8 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
     @property
     def nc_time(self):
         """numpy.array: Dataset time coordinates."""
-        return self._nc_coords[self._dims['time']]
+        # return self._nc_coords[self._dims['time']]
+        return self._nc_coords['time']
 
     @property
     def starttime(self):
