@@ -239,7 +239,7 @@ def decode_nc_times(timevar):
     times = nc.num2date(timevar[:], timevar.units, calendar)
     return np.array(times, dtype='datetime64[s]')
 
-
+# def get_nc_coordinates(dataset, dimnames, time_var, time_units)
 def get_nc_coordinates(dataset, dimnames):
     coords = OrderedDict()
     for dim, dimname in dimnames.items():

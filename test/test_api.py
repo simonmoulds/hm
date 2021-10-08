@@ -50,6 +50,22 @@ def test_open_hmdataarray_wfdei():
     )
     assert type(x).__name__ == 'HmSpaceTimeDataArray'
 
+
+def test_open_hmdataarray_agmerra():
+    domain = hm.set_domain(
+        'test_data/AgMERRA/AgMERRA_2010_prate.nc4',
+        mt,
+        mask_varname='prate',
+        decode_times=False
+    )
+    x = hm.open_hmdataarray(
+        'test_data/AgMERRA/AgMERRA_2010_prate.nc4',
+        'prate',
+        domain,
+        decode_times=False,
+        time_units='days since 1980-01-01 12:00:00'
+    )
+
 def test_open_hmdataarray_ceh_gear():
     pass
 

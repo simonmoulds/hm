@@ -5,6 +5,7 @@ from .utils import *
 from .constants import *
 from .modeltime import ModelTime
 from .dataarray import HmDomain, HmDataArray, HmSpaceDataArray, HmSpaceTimeDataArray
+import inspect
 import string
 import xarray as xr
 import numpy as np
@@ -284,38 +285,79 @@ def _get_filename_list(filename_or_obj, domain, sample=1):
     return filename_list
 
 
+def _get_default_args(func):
+    signature = inspect.signature(func)
+    return {
+        k: v.default
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
+
+def _get_parameter_list(func):
+    signature = inspect.signature(func)
+    return [param for param in signature.parameters.keys()]
+
+def _get_xarray_kwargs(**kwargs):
+    """This function separates xarray keyword arguments
+    from other keyword arguments.
+    """
+    xarray_param_list = list(
+        dict.fromkeys(
+            _get_parameter_list(xr.open_dataset)
+            + _get_parameter_list(xr.open_mfdataset)
+        )
+    )
+    open_dataset_params = _get_default_args(xr.open_dataset)
+    open_mfdataset_params = _get_default_args(xr.open_mfdataset)
+    xarray_default_kwargs = {**open_dataset_params, **open_mfdataset_params}
+    xarray_user_kwargs = {key:value for key,value in kwargs.items() if key in xarray_param_list}
+    return {**xarray_default_kwargs, **xarray_user_kwargs}
+
 def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
     filename_list = _get_filename_list(filename_or_obj, domain, sample)
-    kwargs['combine'] = 'by_coords'
-    # if len(filename_list) > 1:
-    #     kwargs['combine'] = 'by_coords'
-    try:
-        ds = xr.open_mfdataset(filename_list, **kwargs)
-    except ValueError:
-        # A ValueError arises when xarray cannot properly
-        # decode the times in the dataset (this happens
-        # with WFDEI data, for instance). In this case we
-        # have to decode the times manually.
-        kwargs['decode_times'] = False
-        ds = xr.open_mfdataset(filename_list, **kwargs)
-        # does the dataset have a variable which is interpretable as time?
-        timedim = [dim for dim in ds.dims if dim in allowed_t_dim_names][0]
-        # timevars = [var for var in ds.variables.keys(
-        # ) if var in allowed_t_dim_names]# and var not in timedim]
-        timevars = [var for var in ds.variables.keys(
-        ) if var in allowed_t_dim_names and var not in timedim]
-        if len(timevars) == 1:
-            timevar = timevars[0]
-            time = ds[timevar]
-            time_cftime = nc.num2date(time.values, time.units)
-            timenum = np.array([np.datetime64(tm) for tm in time_cftime])
-            # timenum = np.array(
-            #     nc.num2date(time.values, time.units),
-            #     dtype='datetime64'
-            # )
-            ds.update(xr.Dataset({timedim: timenum}))
-        else:
-            raise ValueError
+    xarray_kwargs = _get_xarray_kwargs(**kwargs)
+    xarray_kwargs['combine'] = 'by_coords'
+    ds = None # Prevent unbound error
+    if xarray_kwargs['decode_times']:
+        try:
+            ds = xr.open_mfdataset(filename_list, **xarray_kwargs)
+        except ValueError:
+            # A ValueError arises when xarray cannot properly
+            # decode the times in the dataset. In this case we
+            # have to decode the times manually.
+            xarray_kwargs['decode_times'] = False
+
+    if not xarray_kwargs['decode_times']:
+        # If decode_times is False we still have a couple of options
+        # to guess the time units.
+        ds = xr.open_mfdataset(filename_list, **xarray_kwargs)
+        time_dim = [dim for dim in ds.dims if dim in allowed_t_dim_names][0]
+        try:
+            time_var = kwargs['time_varname']
+            time_values = ds[time_var].values
+            time_units = ds[time_var].units
+        except KeyError:
+            try:
+                time_var = time_dim
+                time_values = ds[time_var].values
+                time_units = ds[time_var].units
+            except AttributeError:
+                time_var = [var for var in ds.variables.keys(
+                ) if var in allowed_t_dim_names and var not in time_dim][0]
+                time_values = ds[time_var].values
+                time_units = ds[time_var].units
+
+        try:
+            time_cftime = nc.num2date(time_values, time_units)
+        except:
+            if 'time_units' in kwargs:
+                time_cftime = nc.num2date(time_values, kwargs['time_units'])
+            else:
+                raise ValueError
+        time_num = np.array([np.datetime64(tm) for tm in time_cftime])
+        print(time_dim)
+        print(type(time_num[0]))
+        ds.update(xr.Dataset({time_dim: time_num}))
     return ds
 
 
@@ -345,7 +387,7 @@ def open_hmdataarray(
         xy_dimname=None,
         model_is_1d=True,
         use_xarray=True,
-        xarray_kwargs={},
+        # xarray_kwargs={},
         **kwargs
 ):
     """Open a dataset from a file or file-like object.
@@ -366,9 +408,9 @@ def open_hmdataarray(
         of the space dimension in `filename_or_obj`        
     use_xarray: bool, optional 
         Not implemented.
-    xarray_kwargs: dict, optional 
-        A dictionary containing arguments which can 
-        be passed to xarray constructor functions.
+    # xarray_kwargs: dict, optional
+    #     A dictionary containing arguments which can
+    #     be passed to xarray constructor functions.
     **kwargs
         Keyword arguments passed to 
         `class:hm.datarray.HmSpaceTimeDataArray` or
@@ -393,7 +435,7 @@ def open_hmdataarray(
     # simulations where input filenames (e.g. model parameters) vary depending on
     # the current sample number.
     sample = kwargs.get('sample', 1)
-    ds = _open_xarray_dataset(filename_or_obj, domain, sample, **xarray_kwargs)
+    ds = _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs)
     da = ds[variable]
     has_data = True
     dims = get_xr_dimension_names(da, is_1d, xy_dimname)
