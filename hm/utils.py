@@ -250,7 +250,7 @@ def get_nc_coordinates(dataset, dimnames):
                 file_coord = []
                 for i, _ in enumerate(dataset):
                     # TODO: check assumption that files are ordered by times
-                    # times = decode_nc_times(dataset[i].variables[dim])
+                    # times = dpecode_nc_times(dataset[i].variables[dim])
                     try:
                         timevals = dataset[i].variables[dimname]
                     except KeyError:

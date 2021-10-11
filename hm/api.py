@@ -348,17 +348,88 @@ def _open_xarray_dataset(filename_or_obj, domain, sample, **kwargs):
                 time_units = ds[time_var].units
 
         try:
-            time_cftime = nc.num2date(time_values, time_units)
+            calendar = ds[time_var].calendar
+        except AttributeError:
+            try:
+                calendar = kwargs['time_calendar']
+            except KeyError:
+                calendar = 'standard'
+
+        try:
+            time_cftime = nc.num2date(time_values, time_units, calendar)
         except:
             if 'time_units' in kwargs:
-                time_cftime = nc.num2date(time_values, kwargs['time_units'])
+                time_units = kwargs['time_units']
+                time_cftime = nc.num2date(time_values, time_units, calendar)
             else:
                 raise ValueError
-        time_num = np.array([np.datetime64(tm) for tm in time_cftime])
-        print(time_dim)
-        print(type(time_num[0]))
-        ds.update(xr.Dataset({time_dim: time_num}))
+        time_num = np.array(time_cftime, dtype='datetime64[s]')
+        time_ds = xr.Dataset({time_dim : time_num})
+        time_ds[time_dim].attrs['units'] = time_units
+        ds.update({time_dim : time_ds[time_dim]})
     return ds
+
+
+# def _decode_nc_times(timevar):
+#     try:
+#         calendar = timevar.calendar
+#     except AttributeError:
+#         calendar = 'standard'
+#     times = nc.num2date(timevar[:], timevar.units, calendar)
+#     return np.array(times, dtype='datetime64[s]')
+
+
+def _open_netcdf_dataset2(filename_or_obj, domain, sample):
+    filename_list = _get_filename_list(filename_or_obj, domain, sample)
+    dataset = [nc.Dataset(f, 'r') for f in filename_list]
+    return dataset
+
+
+def _get_nc_coords2(dataset_list, xr_dimnames, **kwargs):
+    coords = OrderedDict()
+    for dim, dimname in xr_dimnames.items():
+        if dimname is not None:
+            if dim == 'time':
+                time_coord = []
+                index_coord = []
+                file_coord = []
+                for i, _ in enumerate(dataset_list):
+                    try:
+                        time_varname = kwargs['time_varname']
+                        time_var = dataset_list[i][time_varname]
+                    except KeyError:
+                        try:
+                            time_varname = dimname
+                            time_var = dataset_list[i][time_varname]
+                        except IndexError: # AttributeError:
+                            time_varname = [var for var in dataset_list[i].variables.keys(
+                            ) if var in allowed_t_dim_names and var not in dimname][0]
+                            time_var = dataset_list[i][time_varname]
+                    try:
+                        calendar = time_var.calendar
+                    except:
+                        calendar = 'standard' # Guess
+
+                    try:
+                        time_cftime = nc.num2date(time_var[:], time_var.units, calendar)
+                    except:
+                        if 'time_units' in kwargs:
+                            time_cftime = nc.num2date(time_var[:], kwargs['time_units'], calendar)
+                        else:
+                            raise ValueError
+
+                    time_coord.append(np.array(time_cftime, dtype='datetime64[s]'))
+                    file_coord.append(np.array([i] * len(time_cftime), dtype=np.int32))
+                    index_coord.append(np.arange(len(time_cftime)))
+
+                coords[dim] = np.concatenate(time_coord)
+                coords['_file'] = np.concatenate(file_coord)
+                coords['_index'] = np.concatenate(index_coord)
+            else:
+                # TODO: check assumption that files have the same spatial/pseudo coordinates
+                coords[dim] = dataset_list[0].variables[dimname][:].data
+
+    return Box(coords, frozen_box=True)
 
 
 def _open_netcdf_dataset(filename_or_obj, domain, sample, **kwargs):
@@ -533,11 +604,15 @@ def open_hmdataarray(
         # simulation (i.e. a spatial data), but can be
         # considerable when accessed multiple times (i.e.
         # (spatio-)temporal data).
-        nc_dataset = _open_netcdf_dataset(filename_or_obj, domain, sample)
+        xr_dimnames = get_xr_dimension_names(da, is_1d, xy_dimname)
+        nc_dataset = _open_netcdf_dataset2(filename_or_obj, domain, sample)
+        nc_coords = _get_nc_coords2(nc_dataset, xr_dimnames, **kwargs)
+        # nc_dataset = _open_netcdf_dataset(filename_or_obj, domain, sample)
         # if spatial:
         hm = HmSpaceTimeDataArray(
             da,
             nc_dataset,
+            nc_coords,
             variable,
             domain,
             is_1d,

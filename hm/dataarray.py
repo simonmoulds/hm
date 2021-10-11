@@ -372,6 +372,7 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
             self,
             dataarray,
             nc_dataset,
+            nc_coords,
             variable,
             domain,
             is_1d=False,
@@ -427,7 +428,8 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
         )
         self._varname = variable
         self._nc_data = nc_dataset  # nc.Dataset(filename_or_obj, 'r')
-        self._nc_coords = get_nc_coordinates(self._nc_data, self._dims)
+        # self._nc_coords = get_nc_coordinates(self._nc_data, self._dims)
+        self._nc_coords = nc_coords
         self._get_nc_index()
         self.select(time=self._domain.starttime, method='nearest')
 
@@ -459,6 +461,9 @@ class HmSpaceTimeDataArray(HmSpaceDataArray):
             `xarray.Dataset.sel`
         """
         # select time using xarray selection
+        # print(self._dims['time'])
+        # print(self._data['time'])
+        # print(time)
         xr_data = self._data.sel({self._dims['time']: time}, **kwargs)
         xr_time = xr_data[self._dims['time']].values
 
