@@ -436,7 +436,7 @@ class ReportingVariable(object):
         )
         self.reporting_times = self.reporting_times.unique()
         if len(self.reporting_times) == 0:
-            warnings.warn(
+            logger.warn(
                 'Reporting period for some variables is '
                 'longer than the model run duration'
                 # 'Reporting period ' + freq + ' is longer than '
