@@ -35,7 +35,6 @@ def set_modeltime(starttime, endtime, timedelta):
 # See the following answer to compute area from lat/long grid:
 # https://gis.stackexchange.com/a/232996
 
-
 def set_domain(
         filename_or_obj,
         modeltime,
