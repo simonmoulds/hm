@@ -41,11 +41,6 @@ in environmental models.</p>
 <h2>HmDataArray<a class="headerlink" href="#hmdataarray" title="Permalink to this headline">¶</a></h2>
 <section id="hmspacedataarray">
 <h3>HmSpaceDataArray<a class="headerlink" href="#hmspacedataarray" title="Permalink to this headline">¶</a></h3>
-<dl class="py class">
-<dt class="sig sig-object py" id="hm.dataarray.HmSpaceDataArray">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">hm.dataarray.</span></span><span class="sig-name descname"><span class="pre">HmSpaceDataArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xy_dimname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hm.dataarray.HmSpaceDataArray" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="hmspacetimedataarray">
 <h3>HmSpaceTimeDataArray<a class="headerlink" href="#hmspacetimedataarray" title="Permalink to this headline">¶</a></h3>
@@ -56,138 +51,20 @@ such as meteorological input data.</p>
 </section>
 <section id="creating-a-hmdataarray">
 <h2>Creating a HmDataArray<a class="headerlink" href="#creating-a-hmdataarray" title="Permalink to this headline">¶</a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="hm.api.open_hmdataarray">
-<span class="sig-prename descclassname"><span class="pre">hm.api.</span></span><span class="sig-name descname"><span class="pre">open_hmdataarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_or_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xy_dimname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_xarray</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xarray_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hm.api.open_hmdataarray" title="Permalink to this definition">¶</a></dt>
-<dd><p>Open a dataset from a file or file-like object.</p>
-<dl class="simple">
-<dt>filename_or_obj: str</dt><dd><p>String or object which is passed to xarray</p>
-</dd>
-<dt>variable: str</dt><dd><p>The name of the variable to read</p>
-</dd>
-<dt>domain: hm.HmDomain</dt><dd><p>The spatio-temporal model domain</p>
-</dd>
-<dt>is_1d: bool, optional</dt><dd><p>Whether space is represented as a 2-dimensional grid 
-or one-dimensional set of points</p>
-</dd>
-<dt>xy_dimname: str, optional </dt><dd><p>If <cite>is_1d = True</cite>, then <cite>xy_dimname</cite> is the name 
-of the space dimension in <cite>filename_or_obj</cite></p>
-</dd>
-<dt>use_xarray: bool, optional </dt><dd><p>Not implemented.</p>
-</dd>
-<dt>xarray_kwargs: dict, optional </dt><dd><p>A dictionary containing arguments which can 
-be passed to xarray constructor functions.</p>
-</dd>
-<dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs</dt><dd><p>Keyword arguments passed to 
-<cite>class:hm.datarray.HmSpaceTimeDataArray</cite> or
-<cite>class:hm.datarray.HmSpaceDataArray</cite>.</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>dataarray: hm.dataarray.HmDataArray</dt><dd><p>The newly created HmDataArray object</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>ValueError</dt><dd><p>If the <cite>xy_dimname</cite> is incorrectly specified when <cite>is_1d</cite> is True.</p>
-</dd>
-<dt>ValueError</dt><dd><p>If the <cite>filename_or_obj</cite> does not contain the model domain 
-specified by <cite>domain</cite>.</p>
-</dd>
-<dt>ValueError</dt><dd><p>If <cite>filename_or_obj</cite> does not contain spatial information.</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="hmmodeltime">
 <h2>HmModelTime<a class="headerlink" href="#hmmodeltime" title="Permalink to this headline">¶</a></h2>
 <p><code class="xref py py-class docutils literal notranslate"><span class="pre">hm.ModelTime</span></code> represents the temporal grid of a
 hydrological model.</p>
-<p>Creating a HmModelTime</p>
-<p>The constructor function <cite>hm.open_modeltime</cite> takes the following
-arguments:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">starttime</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">endtime</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">timedelta</span></code></p></li>
-</ul>
+</section>
+<section id="creating-a-hmmodeltime">
+<h2>Creating a HmModelTime<a class="headerlink" href="#creating-a-hmmodeltime" title="Permalink to this headline">¶</a></h2>
 </section>
 <section id="hmdomain">
 <h2>HmDomain<a class="headerlink" href="#hmdomain" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="id0">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">hm.dataarray.</span></span><span class="sig-name descname"><span class="pre">HmSpaceDataArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xy_dimname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="creating-a-hmmodeldomain">
 <h2>Creating a HmModelDomain<a class="headerlink" href="#creating-a-hmmodeldomain" title="Permalink to this headline">¶</a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="hm.api.set_domain">
-<span class="sig-prename descclassname"><span class="pre">hm.api.</span></span><span class="sig-name descname"><span class="pre">set_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_or_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modeltime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_varname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_varname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_1d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xy_dimname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pseudo_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hm.api.set_domain" title="Permalink to this definition">¶</a></dt>
-<dd><p>Define the model spatial domain.</p>
-<dl class="simple">
-<dt>filename_or_obj: str</dt><dd><p>String or object which is passed to xarray.</p>
-</dd>
-<dt>modeltime: <cite>hm.modeltime.HmModelTime</cite></dt><dd><p>Object which defines the model temporal grid.</p>
-</dd>
-<dt>mask_varname: str, optional</dt><dd><p>String specifying the name of the variable which defines the 
-model domain. Only used if <cite>filename_or_obj</cite> represents a
-netCDF file.</p>
-</dd>
-<dt>area_varname: str, optional</dt><dd><p>String specifying the name of the variable 
-which defines the model domain. If provided and 
-<cite>filename_or_obj</cite> represents a netCDF file, the program 
-searches for the variable in the file, raising an error if it 
-isn’t found. If not provided, or if <cite>filename_or_obj</cite> is a 
-GDAL raster file, it is assumed that the values in the mask 
-represent the grid cell area. Note that not all models require 
-the cell area; in these cases it is perfectly fine to use
-an arbitrary value (e.g. 1)</p>
-</dd>
-<dt>is_1d: bool, optional</dt><dd><p>Whether space is represented as a 2-dimensional 
-grid or 1-dimensional set of points</p>
-</dd>
-<dt>xy_dimname: str, optional</dt><dd><p>If <cite>is_1d = True</cite>, then <cite>xy_dimname</cite> is the name 
-of the space dimension in <cite>filename_or_obj</cite></p>
-</dd>
-<dt>pseudo_coords: dict, optional </dt><dd><p>Pseudo coordinates are defined as coordinates 
-which are typically used in hydrological models to represent
-sub-grid variables (e.g. land use/land cover types),
-but may be used for other purposes (e.g. ensemble
-simulations). The dictionary keys should match the
-name of the corresponding dimension in any input netCDF
-file, as well as the name used in the <cite>variable_list</cite>
-module for model implementations build on the <cite>hm</cite>
-infrastructure. Dictionary values should be a
-1-dimensional numpy array with the value of each
-coordinate (typically a sequence of integers)</p>
-</dd>
-<dt><a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs</dt><dd><p>Keyword arguments passed to class:<cite>xarray.open_dataset()</cite></p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>domain<span class="classifier">hm.domain.HmDomain</span></dt><dd><p>The newly created ModelDomain object</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>ValueError</dt><dd><p>If the <cite>xy_dimname</cite> is not specified when <cite>is_1d</cite> is True.</p>
-</dd>
-<dt>ValueError</dt><dd><p>If <cite>filename_or_obj</cite> contains more than one variable, and 
-<cite>mask_varname</cite> is not specified.</p>
-</dd>
-<dt>ValueError</dt><dd><p>If <cite>filename_or_obj</cite> does not contain spatial information.</p>
-</dd>
-<dt>ValueError</dt><dd><p>If <cite>filename_or_obj</cite> is one-dimensional but has ambiguous 
-variable names for x and y coordinates.</p>
-</dd>
-<dt>KeyError</dt><dd><p>If the <cite>filename_or_obj</cite> does not contain <cite>mask_varname</cite>.</p>
-</dd>
-<dt>OSError</dt><dd><p>If the <cite>filename_or_obj</cite> cannot be opened.</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 </section>
 
@@ -257,7 +134,7 @@ variable names for x and y coordinates.</p>
       &copy;2020, Simon Moulds.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

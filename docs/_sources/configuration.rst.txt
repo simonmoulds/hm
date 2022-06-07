@@ -1,4 +1,7 @@
 Configuration
 =============
 
-TODO
+HmConfiguration
+^^^^^^^^^^^^^^^
+
+.. autoclass:: hm.config.Configuration

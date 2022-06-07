@@ -31,13 +31,9 @@ HmModelTime
 hydrological model.
 
 Creating a HmModelTime
+----------------------
 
-The constructor function `hm.open_modeltime` takes the following
-arguments:
-
-- ``starttime``
-- ``endtime``
-- ``timedelta``
+.. autofunction:: hm.api.open_modeltime
 
 HmDomain
 --------
