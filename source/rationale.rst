@@ -1,4 +1,0 @@
-Rationale
-=========
-
-TODO

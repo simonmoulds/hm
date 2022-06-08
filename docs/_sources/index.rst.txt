@@ -22,7 +22,6 @@ Documentation
 
 **Getting Started**
 
-* :doc:`rationale`
 * :doc:`overview`
 * :doc:`installing`
 
@@ -31,7 +30,6 @@ Documentation
    :hidden:
    :caption: Getting Started
 
-   rationale
    overview
    examples
    installing
