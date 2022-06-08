@@ -32,8 +32,7 @@ hydrological model.
 
 Creating a HmModelTime
 ----------------------
-
-.. autofunction:: hm.api.open_modeltime
+TODO
 
 HmDomain
 --------

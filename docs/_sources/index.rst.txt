@@ -34,7 +34,6 @@ Documentation
    examples
    installing
 
-   
 **User Guide**
 
 * :doc:`data-structures`
