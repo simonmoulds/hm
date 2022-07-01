@@ -70,9 +70,9 @@ class HmInputData(object):
             self.model.is_1d
         )
 
-    def update(self, method):
+    def update(self, method, **kwargs):
         vars(self.model)[self.dataset_varname].select(
-            time=self.model.time.curr_time, method=method
+            time=self.model.time.curr_time, method=method, **kwargs
         )
         vars(self.model)[self.model_varname] = (vars(self.model)[self.dataset_varname].values * self.factor) + self.offset
 
